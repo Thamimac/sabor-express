@@ -1,0 +1,21 @@
+{
+  "name": "sabor-express",
+  "version": "1.0.0",
+  "description": "Sabor Express - Sistema web de gestão de pedidos e delivery para restaurante (Laboratório de Engenharia de Software - FATEC SP)",
+  "main": "src/server.js",
+  "private": true,
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "dev": "node --watch --disable-warning=ExperimentalWarning src/server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 \"tests/**/*.test.js\"",
+    "seed": "node --disable-warning=ExperimentalWarning src/db/seed.js --reset",
+    "demo": "node --disable-warning=ExperimentalWarning src/db/demo.js",
+    "backup": "node --disable-warning=ExperimentalWarning scripts/backup.js",
+    "verificar": "node --disable-warning=ExperimentalWarning scripts/verificar-banco.js"
+  },
+  "keywords": ["restaurante", "delivery", "pedidos", "les", "fatec"],
+  "license": "MIT"
+}
