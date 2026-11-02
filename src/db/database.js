@@ -18,7 +18,10 @@ function abrir(caminho = config.dbPath) {
 }
 
 function getDb() {
-  if (!db) db = abrir();
+  if (!db) {
+    db = abrir();
+    require('./seed').popularSeVazio(db); // 1ª execução: cria os dados iniciais
+  }
   return db;
 }
 

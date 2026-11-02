@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sabor Express — Restaurante e Delivery</title>
+  <link rel="stylesheet" href="/css/estilo.css">
+</head>
+<body>
+  <header class="topo">
+    <div class="container">
+      <a class="marca" href="/">Sabor <span>Express</span></a>
+      <nav class="menu" aria-label="Menu principal">
+        <a href="/" class="ativo">Início</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="destaque">
+      <div class="container">
+        <div>
+          <h1>Comida caseira, do pedido à entrega.</h1>
+          <p>Peça pelo site e acompanhe cada etapa: confirmação, preparo na cozinha e entrega na sua porta.</p>
+          <div id="situacao" class="linha" aria-live="polite"><span class="selo">Carregando…</span></div>
+        </div>
+        <div class="cartao painel-status">
+          <h3>Consulte a taxa de entrega</h3>
+          <label for="bairro">Seu bairro</label>
+          <select id="bairro"><option value="">Selecione…</option></select>
+          <div id="resultado-taxa" class="mensagem info oculto" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="secao">
+      <div class="container">
+        <h2>Como você prefere?</h2>
+        <div class="grade">
+          <div class="cartao modalidade"><span class="icone" aria-hidden="true">🛵</span>
+            <div><h3>Entrega</h3><p class="suave">Até 8 km do restaurante, com taxa por distância.</p></div></div>
+          <div class="cartao modalidade"><span class="icone" aria-hidden="true">🥡</span>
+            <div><h3>Retirada no balcão</h3><p class="suave">Sem taxa. Avisamos quando estiver pronto.</p></div></div>
+          <div class="cartao modalidade"><span class="icone" aria-hidden="true">🍽️</span>
+            <div><h3>Consumo no salão</h3><p class="suave">Peça direto da mesa, pelo tablet ou celular.</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="secao">
+      <div class="container">
+        <h2>Taxas de entrega</h2>
+        <div class="tabela-rolagem cartao" style="padding:0">
+          <table>
+            <thead><tr><th>Distância</th><th class="num">Taxa</th></tr></thead>
+            <tbody id="faixas"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    <div class="container linha entre">
+      <span id="rodape-endereco">Sabor Express</span>
+      <span>Sistema desenvolvido para a disciplina de Laboratório de Engenharia de Software — FATEC SP</span>
+    </div>
+  </footer>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/inicio.js"></script>
+</body>
+</html>
