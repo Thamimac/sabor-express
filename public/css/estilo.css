@@ -291,3 +291,9 @@ tfoot th { background: #f3e9dd; text-transform: none; font-size: .95rem; color: 
 .cartao table { background: transparent; }
 .indicador strong { white-space: nowrap; font-size: clamp(1.15rem, 1.8vw, 1.6rem); }
 #aba-resumo .grade { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+
+
+/* ---- Parte 8: gestão ---- */
+.email-corpo { white-space: pre-wrap; font-family: inherit; font-size: .875rem; background: #faf3ea; padding: .75rem; border-radius: 8px; margin: .5rem 0 0; }
+#tabela-equipe select { min-height: 36px; padding: .3rem .5rem; }
+#aba-visao .grade { grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }

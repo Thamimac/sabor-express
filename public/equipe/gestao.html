@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestão — Sabor Express</title>
+  <link rel="stylesheet" href="/css/estilo.css">
+</head>
+<body class="painel">
+  <header class="topo" id="topo"></header>
+  <main class="container-largo pagina">
+    <div class="linha entre">
+      <h1>Gestão</h1>
+      <div id="situacao"></div>
+    </div>
+
+    <div class="abas" role="tablist">
+      <button role="tab" aria-selected="true" data-aba="visao">Visão geral</button>
+      <button role="tab" aria-selected="false" data-aba="cardapio">Cardápio</button>
+      <button role="tab" aria-selected="false" data-aba="equipe">Equipe</button>
+      <button role="tab" aria-selected="false" data-aba="config">Configurações</button>
+      <button role="tab" aria-selected="false" data-aba="auditoria">Auditoria</button>
+      <button role="tab" aria-selected="false" data-aba="emails">E-mails</button>
+      <button role="tab" aria-selected="false" data-aba="backup">Backup</button>
+    </div>
+
+    <section id="aba-visao" role="tabpanel">
+      <div class="indicadores" id="ind-visao"></div>
+      <div class="grade" style="margin-top:1rem">
+        <div class="cartao"><h3>Faturamento dos últimos 7 dias</h3><table><tbody id="semana"></tbody></table></div>
+        <div class="cartao"><h3>Mais vendidos (30 dias)</h3><table><tbody id="mais-vendidos"></tbody></table></div>
+        <div class="cartao"><h3>SLA da RotaLog (7 dias)</h3><table><tbody id="sla-resumo"></tbody></table></div>
+      </div>
+    </section>
+
+    <section id="aba-cardapio" role="tabpanel" class="oculto">
+      <p><button type="button" class="botao" id="novo-item">+ Novo item</button></p>
+      <div id="lista-cardapio"></div>
+    </section>
+
+    <section id="aba-equipe" role="tabpanel" class="oculto">
+      <div class="layout-checkout">
+        <div class="tabela-rolagem cartao" style="padding:0">
+          <table>
+            <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Situação</th><th></th></tr></thead>
+            <tbody id="tabela-equipe"></tbody>
+          </table>
+        </div>
+        <form id="form-funcionario" class="cartao" novalidate>
+          <h3>Novo funcionário</h3>
+          <div class="mensagem oculto" role="alert"></div>
+          <div class="campo"><label for="fu-nome">Nome</label><input id="fu-nome" name="nome" required></div>
+          <div class="campo"><label for="fu-email">E-mail</label><input id="fu-email" name="email" type="email" required></div>
+          <div class="campo"><label for="fu-tel">Telefone</label><input id="fu-tel" name="telefone" type="tel"></div>
+          <div class="campo"><label for="fu-perfil">Perfil</label>
+            <select id="fu-perfil" name="perfil"><option value="atendente">Atendimento/Caixa</option><option value="cozinha">Cozinha</option>
+              <option value="logistica">Logística</option><option value="financeiro">Financeiro</option><option value="gerente">Gerente</option></select></div>
+          <div class="campo"><label for="fu-senha">Senha inicial</label><input id="fu-senha" name="senha" type="password" required>
+            <p class="ajuda">Mínimo de 8 caracteres, com letras e números.</p></div>
+          <button type="submit" class="botao bloco">Cadastrar</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="aba-config" role="tabpanel" class="oculto">
+      <form id="form-config" class="cartao caixa-media" style="margin:0" novalidate>
+        <h3>Horário de funcionamento (regra de domínio 1)</h3>
+        <div class="mensagem oculto" role="alert"></div>
+        <div class="campos">
+          <div class="campo"><label for="cf-abre">Abertura</label><input id="cf-abre" name="horario_abertura" type="time" required></div>
+          <div class="campo"><label for="cf-fecha">Fechamento</label><input id="cf-fecha" name="horario_fechamento" type="time" required></div>
+        </div>
+        <label class="caixa-checagem"><input type="checkbox" id="cf-demo" name="ignorar_horario">
+          <span><strong>Modo demonstração:</strong> aceitar pedidos fora do horário (use apenas em apresentações e testes).</span></label>
+        <p></p>
+        <button type="submit" class="botao">Salvar configurações</button>
+      </form>
+    </section>
+
+    <section id="aba-auditoria" role="tabpanel" class="oculto">
+      <form class="linha filtros" id="form-auditoria">
+        <div><label for="au-acao">Ação</label><input id="au-acao" name="acao" placeholder="ex.: login, pedido, pagamento"></div>
+        <div><label for="au-usuario">Usuário</label><input id="au-usuario" name="usuario"></div>
+        <div><label for="au-inicio">De</label><input type="date" id="au-inicio" name="inicio"></div>
+        <div><label for="au-fim">Até</label><input type="date" id="au-fim" name="fim"></div>
+        <button type="submit" class="botao">Filtrar</button>
+      </form>
+      <div class="tabela-rolagem cartao" style="padding:0">
+        <table>
+          <thead><tr><th>Data/hora</th><th>Usuário</th><th>Ação</th><th>Registro</th><th>Detalhes</th><th>IP</th></tr></thead>
+          <tbody id="tabela-auditoria"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="aba-emails" role="tabpanel" class="oculto">
+      <p class="suave">O envio de e-mails é simulado: as mensagens ficam registradas aqui (e no terminal do servidor).</p>
+      <ul class="lista" id="lista-emails"></ul>
+    </section>
+
+    <section id="aba-backup" role="tabpanel" class="oculto">
+      <div class="linha entre">
+        <p class="suave">Um backup automático é feito todos os dias. São mantidas as 7 cópias mais recentes na pasta <code>backups</code>.</p>
+        <button type="button" class="botao" id="fazer-backup">Fazer backup agora</button>
+      </div>
+      <div class="tabela-rolagem cartao" style="padding:0">
+        <table>
+          <thead><tr><th>Arquivo</th><th class="num">Tamanho</th><th>Data</th></tr></thead>
+          <tbody id="tabela-backups"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="dialogo-item" class="dialogo">
+    <form id="form-item" novalidate>
+      <div class="linha entre"><h2 id="titulo-item">Novo item</h2><button type="button" class="botao neutro pequeno" data-fechar>Fechar</button></div>
+      <div class="mensagem oculto" role="alert"></div>
+      <input type="hidden" id="it-id">
+      <div class="campo"><label for="it-nome">Nome</label><input id="it-nome" name="nome" required maxlength="80"></div>
+      <div class="campo"><label for="it-desc">Descrição</label><textarea id="it-desc" name="descricao" rows="2" maxlength="200"></textarea></div>
+      <div class="campos">
+        <div class="campo"><label for="it-cat">Categoria</label><select id="it-cat" name="categoria_id"></select></div>
+        <div class="campo"><label for="it-preco">Preço (R$)</label><input id="it-preco" name="preco" inputmode="decimal" placeholder="29,90" required></div>
+      </div>
+      <label class="caixa-checagem"><input type="checkbox" id="it-disp" name="disponivel" checked><span>Disponível no cardápio</span></label>
+      <label class="caixa-checagem"><input type="checkbox" id="it-dest" name="destaque"><span>Destacar como "Mais pedido"</span></label>
+      <p></p>
+      <button type="submit" class="botao">Salvar item</button>
+    </form>
+  </dialog>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/gestao.js"></script>
+</body>
+</html>

@@ -12,6 +12,7 @@ Layout.pronto = (async () => {
 
 // Painéis da equipe: [endereço, nome, perfis com acesso] (o gerente acessa todos)
 const PAINEIS = [
+  ['/equipe/gestao', 'Gestão', []],   
   ['/equipe/atendimento', 'Atendimento', ['atendente']],
   ['/equipe/cozinha', 'Cozinha', ['cozinha', 'atendente']],
   ['/equipe/logistica', 'Logística', ['logistica']],

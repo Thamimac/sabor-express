@@ -4,8 +4,10 @@ const config = require('./config');
 const { App } = require('./lib/http');
 const { getDb } = require('./db/database');
 const { carregarSessao } = require('./lib/sessao');
-  require('./services/notificacoes');
-  require('./services/pagamentos');
+
+// Serviços que reagem a eventos dos pedidos (precisam ser carregados uma vez)
+require('./services/notificacoes');
+require('./services/pagamentos');
 
 function criarApp() {
   const app = new App({ publicDir: config.publicDir });
@@ -13,15 +15,16 @@ function criarApp() {
   // Identifica o usuário logado em todas as requisições à API
   app.use(carregarSessao);
 
-  // Rotas de cada módulo (novas linhas serão adicionadas nas próximas partes)
+  // Rotas de cada módulo
   require('./rotas/geral')(app);
-  require('./rotas/autenticacao')(app);  
-  require('./rotas/conta')(app);          
-  require('./rotas/pedidos')(app);        
-  require('./rotas/equipe')(app); 
-  require('./rotas/logistica')(app);     
-  require('./rotas/financeiro')(app);
-  
+  require('./rotas/autenticacao')(app);   // Módulo 5
+  require('./rotas/conta')(app);          // Módulo 5
+  require('./rotas/pedidos')(app);        // Módulo 1
+  require('./rotas/equipe')(app);         // Atendimento e Módulo 2 (cozinha)
+  require('./rotas/logistica')(app);      // Módulo 3
+  require('./rotas/financeiro')(app);     // Módulo 4
+  require('./rotas/gestao')(app);         // Gerente
+
   return app;
 }
 
@@ -34,6 +37,7 @@ function iniciar(porta = config.porta) {
     console.log(`  ➜  Acesse: http://localhost:${porta}`);
     console.log('  ➜  Para parar: Ctrl + C');
     console.log('');
+    require('./services/backup').agendarBackupDiario(); // RNF Confiabilidade
   });
   return servidor;
 }
