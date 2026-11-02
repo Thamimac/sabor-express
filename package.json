@@ -14,7 +14,8 @@
     "seed": "node --disable-warning=ExperimentalWarning src/db/seed.js --reset",
     "demo": "node --disable-warning=ExperimentalWarning src/db/demo.js",
     "backup": "node --disable-warning=ExperimentalWarning scripts/backup.js",
-    "verificar": "node --disable-warning=ExperimentalWarning scripts/verificar-banco.js"
+    "verificar": "node --disable-warning=ExperimentalWarning scripts/verificar-banco.js",
+    "rotalog": "node --disable-warning=ExperimentalWarning scripts/simular-rotalog.js"
   },
   "keywords": ["restaurante", "delivery", "pedidos", "les", "fatec"],
   "license": "MIT"

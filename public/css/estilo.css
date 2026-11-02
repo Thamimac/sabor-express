@@ -259,3 +259,9 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .avisos .aviso-flutuante { position: static; transform: none; max-width: none; }
 body.painel .topo .container { width: min(1400px, 100% - 2rem); }
 @media (max-width: 900px) { .avisos { bottom: 5.5rem; } }
+
+
+/* ---- Parte 6: logística ---- */
+code { background: #f3e9dd; padding: .1rem .35rem; border-radius: 4px; font-size: .85em; word-break: break-all; }
+tr.suave td { color: var(--cor-texto-suave); }
+.abas .contagem { margin-left: .25rem; }

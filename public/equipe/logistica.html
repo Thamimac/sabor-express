@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Logística — Sabor Express</title>
+  <link rel="stylesheet" href="/css/estilo.css">
+</head>
+<body class="painel">
+  <header class="topo" id="topo"></header>
+  <main class="container-largo pagina">
+    <div class="linha entre">
+      <div>
+        <h1>Logística · RotaLog Entregas</h1>
+        <p class="suave">Metas do SLA: aceite em até <strong id="meta-aceite">3</strong> min · entrega em até <strong id="meta-entrega">40</strong> min após o pedido pronto</p>
+      </div>
+      <div class="linha" id="resumo-topo"></div>
+    </div>
+
+    <div class="abas" role="tablist">
+      <button role="tab" aria-selected="true" data-aba="entregas">Entregas</button>
+      <button role="tab" aria-selected="false" data-aba="ocorrencias">Ocorrências <span class="contagem" id="n-ocorrencias">0</span></button>
+      <button role="tab" aria-selected="false" data-aba="entregadores">Entregadores</button>
+      <button role="tab" aria-selected="false" data-aba="sla">SLA</button>
+    </div>
+
+    <!-- RF11 a RF13: despacho e acompanhamento -->
+    <section id="aba-entregas" role="tabpanel">
+      <div class="quadro">
+        <section class="coluna">
+          <h2>Prontos para despacho <span class="contagem" id="n-prontos">0</span></h2>
+          <div id="col-prontos" class="cartoes"></div>
+          <div id="col-preparo"></div>
+        </section>
+        <section class="coluna">
+          <h2>Aguardando aceite <span class="contagem" id="n-despachados">0</span></h2>
+          <div id="col-despachados" class="cartoes"></div>
+        </section>
+        <section class="coluna">
+          <h2>Em rota <span class="contagem" id="n-rota">0</span></h2>
+          <div id="col-rota" class="cartoes"></div>
+        </section>
+      </div>
+      <section class="secao">
+        <h2>Entregues hoje</h2>
+        <div class="tabela-rolagem cartao" style="padding:0">
+          <table>
+            <thead><tr><th>Pedido</th><th>Bairro / endereço</th><th>Entregador</th><th class="num">Pronto → entregue</th><th>SLA</th></tr></thead>
+            <tbody id="entregues"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <!-- RF15: ocorrências (Gestão de Incidentes) -->
+    <section id="aba-ocorrencias" role="tabpanel" class="oculto">
+      <ul class="lista" id="lista-ocorrencias"></ul>
+    </section>
+
+    <!-- RF12: cadastro dos entregadores da empresa parceira -->
+    <section id="aba-entregadores" role="tabpanel" class="oculto">
+      <div class="layout-checkout">
+        <div class="tabela-rolagem cartao" style="padding:0">
+          <table>
+            <thead><tr><th>Nome</th><th>Documento</th><th>Telefone</th><th>Veículo</th><th>Empresa</th><th></th></tr></thead>
+            <tbody id="tabela-entregadores"></tbody>
+          </table>
+        </div>
+        <form id="form-entregador" class="cartao" novalidate>
+          <h3>Novo entregador</h3>
+          <div class="mensagem oculto" role="alert"></div>
+          <div class="campo"><label for="en-nome">Nome</label><input id="en-nome" name="nome" required></div>
+          <div class="campo"><label for="en-doc">CPF / documento</label><input id="en-doc" name="documento"></div>
+          <div class="campo"><label for="en-tel">Telefone</label><input id="en-tel" name="telefone" type="tel" required></div>
+          <div class="campo"><label for="en-veic">Veículo / placa</label><input id="en-veic" name="veiculo"></div>
+          <div class="campo"><label for="en-emp">Empresa</label><input id="en-emp" name="empresa" value="RotaLog Entregas"></div>
+          <button type="submit" class="botao bloco">Cadastrar</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Regra de domínio 6: SLA da RotaLog -->
+    <section id="aba-sla" role="tabpanel" class="oculto">
+      <div class="linha">
+        <label for="periodo" style="margin:0">Período</label>
+        <select id="periodo" style="width:auto">
+          <option value="1">Hoje</option><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option>
+        </select>
+      </div>
+      <div class="tabela-rolagem cartao" style="padding:0;margin-top:1rem">
+        <table>
+          <thead><tr><th>Indicador</th><th>Meta (SLA)</th><th class="num">Resultado</th><th class="num">Dentro da meta</th><th class="num">Amostra</th><th>Situação</th></tr></thead>
+          <tbody id="tabela-sla"></tbody>
+        </table>
+      </div>
+      <p class="pequeno suave" id="penalidade"></p>
+      <div id="integracao" class="cartao oculto"></div>
+    </section>
+  </main>
+
+  <dialog id="dialogo-ocorrencia" class="dialogo">
+    <form id="form-ocorrencia" novalidate>
+      <div class="linha entre"><h2>Registrar ocorrência · <span id="oc-codigo"></span></h2><button type="button" class="botao neutro pequeno" data-fechar>Fechar</button></div>
+      <div class="mensagem oculto" role="alert"></div>
+      <div class="campo"><label for="oc-tipo">Tipo</label>
+        <select id="oc-tipo" name="tipo">
+          <option value="atraso">Atraso</option><option value="endereco_nao_encontrado">Endereço não encontrado</option>
+          <option value="cliente_ausente">Cliente ausente</option><option value="avaria">Avaria</option>
+          <option value="extravio">Extravio</option><option value="outro">Outro</option>
+        </select></div>
+      <div class="campo"><label for="oc-desc">Descrição</label><textarea id="oc-desc" name="descricao" rows="3" maxlength="300"></textarea></div>
+      <button type="submit" class="botao">Registrar</button>
+    </form>
+  </dialog>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/logistica.js"></script>
+</body>
+</html>

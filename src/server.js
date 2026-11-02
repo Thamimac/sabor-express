@@ -18,6 +18,7 @@ function criarApp() {
   require('./rotas/conta')(app);          
   require('./rotas/pedidos')(app);        
   require('./rotas/equipe')(app); 
+  require('./rotas/logistica')(app);     
 
   return app;
 }

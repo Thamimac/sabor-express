@@ -37,8 +37,8 @@ barramento.on('pedido:criado', ({ pedido }) => {
 barramento.on('pedido:status', ({ pedido, anterior, ctx }) => {
   // Cliente acompanha cada etapa (se o pedido tiver um cliente cadastrado e não foi ele quem fez a ação)
   const msg = mensagemParaCliente(pedido);
-  if (msg && pedido.cliente_id && ctx?.usuario?.id !== pedido.cliente_id) {
-    notificar({ destino: 'cliente', usuarioId: pedido.cliente_id, pedido, mensagem: msg });
+  const voltouParaFila = pedido.status === 'pronto' && anterior === 'despachado'; // entregador recusou: não repete o aviso
+  if (msg && pedido.cliente_id && ctx?.usuario?.id !== pedido.cliente_id && !voltouParaFila) {    notificar({ destino: 'cliente', usuarioId: pedido.cliente_id, pedido, mensagem: msg });
   }
   if (pedido.status === 'cancelado' && ctx?.usuario?.id === pedido.cliente_id) {
     notificar({ destino: 'atendente', pedido, mensagem: `O cliente cancelou o pedido ${pedido.codigo}.` });
@@ -79,5 +79,7 @@ function marcarLidas(usuario) {
   else if (usuario.perfil === 'gerente') executar("UPDATE notificacoes SET lida = 1 WHERE destino <> 'cliente'");
   else executar('UPDATE notificacoes SET lida = 1 WHERE destino = ?', usuario.perfil);
 }
+
+
 
 module.exports = { notificar, listar, marcarLidas };
