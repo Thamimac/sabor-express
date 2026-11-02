@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Atendimento — Sabor Express</title>
+  <link rel="stylesheet" href="/css/estilo.css">
+</head>
+<body class="painel">
+  <header class="topo" id="topo"></header>
+  <main class="container-largo pagina">
+    <div class="linha entre">
+      <div>
+        <h1>Atendimento</h1>
+        <div class="linha" id="indicadores"></div>
+      </div>
+      <button type="button" class="botao" id="novo-pedido">+ Pedido de balcão / telefone</button>
+    </div>
+
+    <div class="quadro">
+      <section class="coluna">
+        <h2>Aguardando confirmação <span class="contagem" id="n-aguardando">0</span></h2>
+        <div id="col-aguardando" class="cartoes"></div>
+      </section>
+      <section class="coluna">
+        <h2>Na cozinha <span class="contagem" id="n-cozinha">0</span></h2>
+        <div id="col-cozinha" class="cartoes"></div>
+      </section>
+      <section class="coluna">
+        <h2>Prontos e em entrega <span class="contagem" id="n-prontos">0</span></h2>
+        <div id="col-prontos" class="cartoes"></div>
+      </section>
+    </div>
+
+    <section class="secao">
+      <h2>Finalizados hoje</h2>
+      <div class="tabela-rolagem cartao" style="padding:0">
+        <table>
+          <thead><tr><th>Pedido</th><th>Cliente</th><th>Modalidade</th><th>Status</th><th>Pagamento</th><th class="num">Total</th><th>Hora</th></tr></thead>
+          <tbody id="finalizados"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Pedido registrado pelo atendente (telefone, WhatsApp ou balcão) -->
+  <dialog id="dialogo-pedido" class="dialogo">
+    <form id="form-novo" novalidate>
+      <div class="linha entre"><h2>Novo pedido</h2><button type="button" class="botao neutro pequeno" data-fechar>Fechar</button></div>
+      <div class="mensagem oculto" role="alert"></div>
+      <div class="campos">
+        <div class="campo"><label for="n-nome">Nome do cliente</label><input id="n-nome" name="cliente_nome" required maxlength="80"></div>
+        <div class="campo"><label for="n-tel">Telefone</label><input id="n-tel" name="cliente_telefone" type="tel" placeholder="(11) 91234-5678"></div>
+      </div>
+      <div class="opcoes">
+        <label class="opcao"><input type="radio" name="modalidade" value="retirada" checked><span><strong>🥡 Retirada</strong></span></label>
+        <label class="opcao"><input type="radio" name="modalidade" value="salao"><span><strong>🍽️ Salão</strong></span></label>
+        <label class="opcao"><input type="radio" name="modalidade" value="entrega"><span><strong>🛵 Entrega</strong></span></label>
+      </div>
+      <div id="n-bloco-mesa" class="campo oculto"><label for="n-mesa">Mesa</label><input id="n-mesa" name="mesa" type="number" min="1" max="40"></div>
+      <div id="n-bloco-endereco" class="oculto">
+        <div class="campos">
+          <div class="campo"><label for="n-rua">Rua / Avenida</label><input id="n-rua" name="endereco.logradouro"></div>
+          <div class="campo"><label for="n-num">Número</label><input id="n-num" name="endereco.numero" maxlength="10"></div>
+        </div>
+        <div class="campos">
+          <div class="campo"><label for="n-compl">Complemento</label><input id="n-compl" name="endereco.complemento" maxlength="60"></div>
+          <div class="campo"><label for="n-bairro">Bairro</label><select id="n-bairro" name="endereco.bairro_id"></select></div>
+        </div>
+      </div>
+
+      <h3>Itens</h3>
+      <div class="linha">
+        <select id="n-item" aria-label="Item do cardápio" style="flex:2;min-width:200px"></select>
+        <input id="n-qtd" type="number" min="1" max="20" value="1" aria-label="Quantidade" style="width:80px">
+        <input id="n-obs" placeholder="Observação" maxlength="140" aria-label="Observação" style="flex:1;min-width:140px">
+        <button type="button" class="botao secundario" id="n-adicionar">Adicionar</button>
+      </div>
+      <ul class="linhas-pedido" id="n-itens" style="margin-top:1rem"></ul>
+
+      <h3>Pagamento</h3>
+      <div class="campos">
+        <div class="campo"><label for="n-forma">Forma</label>
+          <select id="n-forma" name="forma_pagamento">
+            <option value="dinheiro">Dinheiro</option><option value="pix">Pix</option>
+            <option value="credito">Cartão de crédito</option><option value="debito">Cartão de débito</option>
+          </select></div>
+        <div class="campo"><label for="n-troco">Troco para (R$)</label><input id="n-troco" name="troco_para" inputmode="decimal"></div>
+      </div>
+      <div class="campo"><label for="n-observacoes">Observações</label><input id="n-observacoes" name="observacoes" maxlength="200"></div>
+      <div class="linha entre">
+        <strong id="n-total">Total: —</strong>
+        <button type="submit" class="botao">Registrar pedido</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/atendimento.js"></script>
+</body>
+</html>

@@ -7,7 +7,7 @@ $('#form-login').addEventListener('submit', (e) => {
     const { usuario } = await api.post('/api/auth/login', dados);
     // Só aceita redirecionar para páginas do próprio site
     if (voltar && voltar.startsWith('/') && !voltar.startsWith('//')) location.href = voltar;
-    else location.href = usuario.equipe ? '/' : '/conta';
+        else location.href = Layout.paginaInicial(usuario);
   });
 });
 

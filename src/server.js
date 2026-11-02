@@ -4,6 +4,7 @@ const config = require('./config');
 const { App } = require('./lib/http');
 const { getDb } = require('./db/database');
 const { carregarSessao } = require('./lib/sessao');
+  require('./services/notificacoes');
 
 function criarApp() {
   const app = new App({ publicDir: config.publicDir });
@@ -13,9 +14,11 @@ function criarApp() {
 
   // Rotas de cada módulo (novas linhas serão adicionadas nas próximas partes)
   require('./rotas/geral')(app);
-  require('./rotas/autenticacao')(app);   // Módulo 5
-  require('./rotas/conta')(app);          // Módulo 5
-  require('./rotas/pedidos')(app);        // Módulo 1     ← NOVA
+  require('./rotas/autenticacao')(app);  
+  require('./rotas/conta')(app);          
+  require('./rotas/pedidos')(app);        
+  require('./rotas/equipe')(app); 
+
   return app;
 }
 

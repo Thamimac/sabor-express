@@ -199,3 +199,63 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 @media (max-width: 900px) {
   .aviso-flutuante { bottom: 5.5rem; }
 }
+
+/* ---- Parte 5: painéis da equipe (atendimento e cozinha) e notificações ---- */
+.container-largo { width: min(1400px, 100% - 2rem); margin-inline: auto; }
+.quadro { display: grid; gap: 1rem; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 1.5rem; align-items: start; }
+.coluna { background: #f3e9dd; border-radius: var(--raio); padding: .75rem; min-height: 200px; }
+.coluna h2 { font-family: var(--fonte); font-size: 1rem; display: flex; align-items: center; gap: .5rem; margin: .25rem .25rem .75rem; }
+.contagem { background: var(--cor-texto); color: #fff; border-radius: 999px; padding: 0 .55rem; font-size: .8rem; }
+.cartoes { display: grid; gap: .75rem; }
+.cartao-pedido { background: var(--cor-superficie); border: 1px solid var(--cor-borda); border-left: 5px solid var(--cor-borda); border-radius: 10px; padding: .85rem; display: grid; gap: .5rem; box-shadow: var(--sombra); }
+.cartao-pedido p { margin: 0; }
+.cartao-pedido.novo { border-left-color: var(--cor-alerta); }
+.cartao-pedido.atrasado { border-left-color: var(--cor-erro); }
+.cartao-pedido.compacto { padding: .6rem .8rem; gap: .25rem; box-shadow: none; }
+.itens-compactos { margin: 0; padding-left: 1.1rem; font-size: .9rem; }
+.itens-compactos em { color: var(--cor-erro); font-style: normal; }
+.indicadores { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-top: 1rem; }
+.indicador { background: var(--cor-superficie); border: 1px solid var(--cor-borda); border-radius: var(--raio); padding: .75rem 1rem; display: grid; gap: .1rem; }
+.indicador span { font-size: .8rem; color: var(--cor-texto-suave); text-transform: uppercase; letter-spacing: .03em; font-weight: 600; }
+.indicador strong { font-size: 1.6rem; font-variant-numeric: tabular-nums; }
+.indicador.alerta strong { color: var(--cor-erro); }
+
+/* Cozinha: letras grandes para leitura à distância (tablet na parede) */
+.codigo-grande { font-size: 1.3rem; }
+.itens-cozinha { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; font-size: 1.1rem; }
+.itens-cozinha .qtd { font-weight: 800; color: var(--cor-primaria); }
+.obs { background: #fff4d6; color: #7a4f00; border-radius: 6px; padding: .2rem .5rem; font-size: .9rem; font-weight: 600; margin-top: .2rem; }
+.cronometro { display: grid; gap: .3rem; }
+.cronometro .tempo { font-size: 1.8rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.cronometro .barra { height: 6px; background: #eee3d6; border-radius: 999px; overflow: hidden; }
+.cronometro .barra div { height: 100%; width: 0; background: var(--cor-sucesso); transition: width .5s linear; }
+.cronometro.atrasado .tempo { color: var(--cor-erro); }
+.cronometro.atrasado .barra div { background: var(--cor-erro); }
+
+/* Sino de notificações */
+.sino-area { position: relative; }
+.sino { position: relative; background: none; border: 0; font-size: 1.25rem; cursor: pointer; padding: .4rem .5rem; border-radius: 8px; }
+.sino:hover { background: #f4e9dd; }
+.contador-sino { position: absolute; top: 0; right: -2px; background: var(--cor-primaria); color: #fff; font-size: .7rem; font-weight: 700; border-radius: 999px; padding: 0 .35rem; }
+.painel-notificacoes { position: absolute; right: 0; top: calc(100% + .5rem); width: min(360px, 90vw); max-height: 420px; overflow-y: auto; background: #fff;
+  border: 1px solid var(--cor-borda); border-radius: var(--raio); box-shadow: var(--sombra); padding: .5rem; z-index: 50; }
+.painel-notificacoes ul { list-style: none; margin: 0; padding: 0; }
+.painel-notificacoes li { padding: .6rem; border-bottom: 1px solid var(--cor-borda); font-size: .9rem; }
+.painel-notificacoes li:last-child { border-bottom: 0; }
+.painel-notificacoes li.nao-lida { background: #fdf3ee; border-radius: 8px; }
+.painel-notificacoes small { display: block; color: var(--cor-texto-suave); }
+
+/* Janela de diálogo (novo pedido) */
+.dialogo { border: 0; border-radius: var(--raio); padding: 1.5rem; width: min(720px, 100% - 2rem); max-height: 90vh; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+.dialogo::backdrop { background: rgba(42, 30, 23, .45); }
+.dialogo h3 { margin-top: 1rem; }
+
+@media (max-width: 1000px) {
+  .quadro { grid-template-columns: 1fr; }
+}
+
+/* Avisos empilhados (um embaixo do outro) e cabeçalho largo nos painéis */
+.avisos { position: fixed; left: 50%; bottom: 1.25rem; transform: translateX(-50%); display: grid; gap: .5rem; z-index: 100; width: max-content; max-width: calc(100% - 2rem); }
+.avisos .aviso-flutuante { position: static; transform: none; max-width: none; }
+body.painel .topo .container { width: min(1400px, 100% - 2rem); }
+@media (max-width: 900px) { .avisos { bottom: 5.5rem; } }

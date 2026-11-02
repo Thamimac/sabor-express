@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cozinha — Sabor Express</title>
+  <link rel="stylesheet" href="/css/estilo.css">
+</head>
+<body class="painel">
+  <header class="topo" id="topo"></header>
+  <main class="container-largo pagina">
+    <div class="linha entre">
+      <h1>Cozinha</h1>
+      <span class="suave pequeno" id="relogio"></span>
+    </div>
+
+    <!-- RF10: indicadores de desempenho do preparo -->
+    <div class="indicadores" id="indicadores"></div>
+
+    <!-- RF07: lista de pedidos em tempo real -->
+    <div class="quadro cozinha">
+      <section class="coluna">
+        <h2>A preparar <span class="contagem" id="n-fila">0</span></h2>
+        <div id="col-fila" class="cartoes"></div>
+      </section>
+      <section class="coluna">
+        <h2>Em preparo <span class="contagem" id="n-preparo">0</span></h2>
+        <div id="col-preparo" class="cartoes"></div>
+      </section>
+      <section class="coluna">
+        <h2>Prontos hoje</h2>
+        <div id="col-prontos" class="cartoes"></div>
+      </section>
+    </div>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/cozinha.js"></script>
+</body>
+</html>

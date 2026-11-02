@@ -39,10 +39,17 @@ const $ = (seletor, raiz = document) => raiz.querySelector(seletor);
 const $$ = (seletor, raiz = document) => [...raiz.querySelectorAll(seletor)];
 
 function avisar(texto, tipo = '') {
+  let pilha = $('#avisos');
+  if (!pilha) {
+    pilha = document.createElement('div');
+    pilha.id = 'avisos';
+    pilha.className = 'avisos';
+    pilha.setAttribute('role', 'status');
+    document.body.appendChild(pilha);
+  }
   const el = document.createElement('div');
   el.className = `aviso-flutuante ${tipo}`;
-  el.setAttribute('role', 'status');
   el.textContent = texto;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3500);
+  pilha.appendChild(el);
+  setTimeout(() => el.remove(), 4000);
 }
