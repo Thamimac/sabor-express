@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Finalizar pedido — Sabor Express</title>
+  <link rel="stylesheet" href="/css/estilo.css">
+</head>
+<body>
+  <header class="topo" id="topo"></header>
+  <main class="container pagina">
+    <p><a href="/#cardapio">← Voltar ao cardápio</a></p>
+    <h1>Finalizar pedido</h1>
+    <div id="aviso-geral" class="mensagem oculto"></div>
+
+    <form id="form-pedido" class="layout-checkout" novalidate>
+      <div class="pilha">
+        <!-- RF02: itens, quantidades e observações -->
+        <section class="cartao">
+          <h3>1. Itens do pedido</h3>
+          <ul class="linhas-pedido" id="linhas"></ul>
+        </section>
+
+        <!-- RF04: entrega, retirada ou salão -->
+        <section class="cartao">
+          <h3>2. Como você quer receber?</h3>
+          <div class="opcoes" role="radiogroup">
+            <label class="opcao"><input type="radio" name="modalidade" value="entrega" checked>
+              <span><strong>🛵 Entrega</strong><small>No seu endereço</small></span></label>
+            <label class="opcao"><input type="radio" name="modalidade" value="retirada">
+              <span><strong>🥡 Retirada</strong><small>No balcão, sem taxa</small></span></label>
+            <label class="opcao"><input type="radio" name="modalidade" value="salao">
+              <span><strong>🍽️ Salão</strong><small>Estou no restaurante</small></span></label>
+          </div>
+          <div id="bloco-entrega" class="campo">
+            <label for="endereco">Endereço de entrega</label>
+            <select id="endereco" name="endereco_id"></select>
+            <p class="ajuda"><a href="/conta#enderecos">Cadastrar ou editar endereços</a></p>
+          </div>
+          <div id="bloco-salao" class="campo oculto">
+            <label for="mesa">Número da mesa</label>
+            <input id="mesa" name="mesa" type="number" min="1" max="40" inputmode="numeric">
+          </div>
+          <div id="bloco-retirada" class="mensagem info oculto">Retire no balcão: Rua Barão de Paranapiacaba, 100 - Sé. Avisaremos quando estiver pronto.</div>
+        </section>
+
+        <section class="cartao">
+          <h3>3. Pagamento</h3>
+          <div class="opcoes">
+            <label class="opcao"><input type="radio" name="forma_pagamento" value="pix" checked><span><strong>Pix</strong><small>Aprovação na hora</small></span></label>
+            <label class="opcao"><input type="radio" name="forma_pagamento" value="credito"><span><strong>Crédito</strong><small>Pague pelo site</small></span></label>
+            <label class="opcao"><input type="radio" name="forma_pagamento" value="debito"><span><strong>Débito</strong><small>Pague pelo site</small></span></label>
+            <label class="opcao"><input type="radio" name="forma_pagamento" value="dinheiro"><span><strong>Dinheiro</strong><small>Na entrega/retirada</small></span></label>
+          </div>
+          <div id="bloco-troco" class="campo oculto">
+            <label for="troco">Troco para (R$) <span class="suave">(opcional)</span></label>
+            <input id="troco" name="troco_para" inputmode="decimal" placeholder="Ex.: 100">
+          </div>
+          <div class="campo">
+            <label for="observacoes">Observações gerais <span class="suave">(opcional)</span></label>
+            <textarea id="observacoes" name="observacoes" rows="2" maxlength="200" placeholder="Ex.: interfone com defeito, ligar ao chegar"></textarea>
+          </div>
+        </section>
+      </div>
+
+      <!-- RF03: resumo com total e taxa de entrega -->
+      <aside class="cartao resumo">
+        <h3>Resumo</h3>
+        <div class="linha entre"><span>Subtotal</span><span id="r-subtotal">—</span></div>
+        <div class="linha entre"><span>Taxa de entrega</span><span id="r-taxa">—</span></div>
+        <hr class="separador">
+        <div class="linha entre total"><span>Total</span><strong id="r-total">—</strong></div>
+        <p class="pequeno suave" id="r-previsao"></p>
+        <div class="mensagem oculto" role="alert" id="r-erro"></div>
+        <button type="submit" class="botao bloco" id="botao-confirmar">Confirmar pedido</button>
+      </aside>
+    </form>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/carrinho.js"></script>
+  <script src="/js/checkout.js"></script>
+</body>
+</html>

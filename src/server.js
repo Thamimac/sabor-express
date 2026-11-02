@@ -15,7 +15,7 @@ function criarApp() {
   require('./rotas/geral')(app);
   require('./rotas/autenticacao')(app);   // Módulo 5
   require('./rotas/conta')(app);          // Módulo 5
-
+  require('./rotas/pedidos')(app);        // Módulo 1     ← NOVA
   return app;
 }
 

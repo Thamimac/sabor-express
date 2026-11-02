@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sabor Express — Restaurante e Delivery</title>
+  <title>Sabor Express — Cardápio e Delivery</title>
   <link rel="stylesheet" href="/css/estilo.css">
 </head>
 <body>
-    <header class="topo" id="topo"></header>
+  <header class="topo" id="topo"></header>
 
   <main>
     <section class="destaque">
@@ -26,17 +26,23 @@
       </div>
     </section>
 
-    <section class="secao">
-      <div class="container">
-        <h2>Como você prefere?</h2>
-        <div class="grade">
-          <div class="cartao modalidade"><span class="icone" aria-hidden="true">🛵</span>
-            <div><h3>Entrega</h3><p class="suave">Até 8 km do restaurante, com taxa por distância.</p></div></div>
-          <div class="cartao modalidade"><span class="icone" aria-hidden="true">🥡</span>
-            <div><h3>Retirada no balcão</h3><p class="suave">Sem taxa. Avisamos quando estiver pronto.</p></div></div>
-          <div class="cartao modalidade"><span class="icone" aria-hidden="true">🍽️</span>
-            <div><h3>Consumo no salão</h3><p class="suave">Peça direto da mesa, pelo tablet ou celular.</p></div></div>
+    <!-- RF01: cardápio digital por categorias -->
+    <section class="secao" id="cardapio">
+      <div class="container layout-cardapio">
+        <div>
+          <div class="linha entre"><h2>Cardápio</h2></div>
+          <nav class="chips" id="chips" aria-label="Categorias"></nav>
+          <div id="categorias"><p class="suave">Carregando cardápio…</p></div>
         </div>
+
+        <!-- Carrinho (computador/tablet) -->
+        <aside class="cartao carrinho-lateral" aria-label="Seu pedido">
+          <h3>Seu pedido</h3>
+          <ul class="carrinho-itens" id="carrinho-itens"></ul>
+          <div class="linha entre carrinho-total"><span>Subtotal</span><strong id="carrinho-subtotal">R$ 0,00</strong></div>
+          <p class="pequeno suave">Taxa de entrega calculada na próxima etapa.</p>
+          <a class="botao bloco" id="botao-finalizar" href="/checkout">Finalizar pedido</a>
+        </aside>
       </div>
     </section>
 
@@ -53,6 +59,11 @@
     </section>
   </main>
 
+  <!-- Carrinho (celular) -->
+  <a class="barra-carrinho oculto" id="barra-carrinho" href="/checkout">
+    <span id="barra-qtd">0 itens</span><strong>Ver pedido · <span id="barra-total">R$ 0,00</span></strong>
+  </a>
+
   <footer class="rodape">
     <div class="container linha entre">
       <span id="rodape-endereco">Sabor Express</span>
@@ -61,9 +72,8 @@
   </footer>
 
   <script src="/js/api.js"></script>
-  <script src="/js/inicio.js"></script>
-    <script src="/js/api.js"></script>
   <script src="/js/layout.js"></script>
+  <script src="/js/carrinho.js"></script>
   <script src="/js/inicio.js"></script>
 </body>
 </html>
