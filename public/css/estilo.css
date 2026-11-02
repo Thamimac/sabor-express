@@ -110,3 +110,22 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .destaque .container { grid-template-columns: 1fr; }
   .menu { width: 100%; margin-left: 0; overflow-x: auto; flex-wrap: nowrap; padding-bottom: .5rem; }
 }
+
+
+/* ---- Parte 3: telas de conta (login, cadastro, minha conta) ---- */
+.pagina { padding: 2rem 0 3rem; }
+.caixa-estreita { width: min(460px, 100% - 2rem); margin: 2rem auto; }
+.caixa-media { width: min(720px, 100% - 2rem); margin: 2rem auto; }
+.separador { border: 0; border-top: 1px solid var(--cor-borda); margin: 1.5rem 0; }
+.caixa-checagem { display: flex; gap: .6rem; align-items: flex-start; font-weight: 400; }
+.caixa-checagem input { margin-top: .3rem; }
+.demo { background: #fffaf2; border: 1px dashed #e0c9a8; border-radius: 10px; padding: .75rem 1rem; font-size: .875rem; }
+.demo summary { cursor: pointer; font-weight: 600; }
+.demo button { margin: .25rem .25rem 0 0; }
+.abas { display: flex; gap: .25rem; border-bottom: 1px solid var(--cor-borda); margin-bottom: 1.5rem; overflow-x: auto; }
+.abas button { background: none; border: 0; border-bottom: 3px solid transparent; padding: .75rem 1rem; font: inherit; font-weight: 600; color: var(--cor-texto-suave); cursor: pointer; white-space: nowrap; }
+.abas button[aria-selected='true'] { color: var(--cor-primaria); border-bottom-color: var(--cor-primaria); }
+.lista { list-style: none; margin: 0; padding: 0; display: grid; gap: .75rem; }
+.lista > li { background: var(--cor-superficie); border: 1px solid var(--cor-borda); border-radius: var(--raio); padding: 1rem; }
+.vazio { text-align: center; padding: 2rem 1rem; color: var(--cor-texto-suave); }
+.zona-perigo { border-color: #f0c4bf; }

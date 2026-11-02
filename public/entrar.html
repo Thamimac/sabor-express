@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrar — Sabor Express</title>
+  <link rel="stylesheet" href="/css/estilo.css">
+</head>
+<body>
+  <header class="topo" id="topo"></header>
+  <main class="caixa-estreita">
+    <div class="cartao">
+      <h1>Entrar</h1>
+      <form id="form-login" novalidate>
+        <div class="mensagem oculto" role="alert"></div>
+        <div class="campo">
+          <label for="email">E-mail</label>
+          <input id="email" name="email" type="email" autocomplete="email" required>
+        </div>
+        <div class="campo">
+          <label for="senha">Senha</label>
+          <input id="senha" name="senha" type="password" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="botao bloco">Entrar</button>
+      </form>
+      <p class="linha entre pequeno">
+        <a href="/esqueci-senha">Esqueci minha senha</a>
+        <a href="/cadastro">Criar conta</a>
+      </p>
+      <details class="demo">
+        <summary>Acessos de demonstração</summary>
+        <p class="suave">Clique para preencher:</p>
+        <button type="button" class="botao neutro pequeno" data-email="maria@email.com" data-senha="cliente2026">Cliente</button>
+        <button type="button" class="botao neutro pequeno" data-email="gerente@saborexpress.com.br" data-senha="sabor2026">Gerente</button>
+        <button type="button" class="botao neutro pequeno" data-email="atendimento@saborexpress.com.br" data-senha="sabor2026">Atendimento</button>
+        <button type="button" class="botao neutro pequeno" data-email="cozinha@saborexpress.com.br" data-senha="sabor2026">Cozinha</button>
+        <button type="button" class="botao neutro pequeno" data-email="logistica@saborexpress.com.br" data-senha="sabor2026">Logística</button>
+        <button type="button" class="botao neutro pequeno" data-email="financeiro@saborexpress.com.br" data-senha="sabor2026">Financeiro</button>
+      </details>
+    </div>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/entrar.js"></script>
+</body>
+</html>

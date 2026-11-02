@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Criar conta — Sabor Express</title>
+  <link rel="stylesheet" href="/css/estilo.css">
+</head>
+<body>
+  <header class="topo" id="topo"></header>
+  <main class="caixa-media">
+    <div class="cartao">
+      <h1>Criar conta</h1>
+      <p class="suave">Com a conta você faz pedidos, salva endereços e acompanha seu histórico.</p>
+      <form id="form-cadastro" novalidate>
+        <div class="mensagem oculto" role="alert"></div>
+
+        <h3>Seus dados</h3>
+        <div class="campo">
+          <label for="nome">Nome completo</label>
+          <input id="nome" name="nome" autocomplete="name" required maxlength="80">
+        </div>
+        <div class="campos">
+          <div class="campo">
+            <label for="email">E-mail</label>
+            <input id="email" name="email" type="email" autocomplete="email" required>
+          </div>
+          <div class="campo">
+            <label for="telefone">Celular (com DDD)</label>
+            <input id="telefone" name="telefone" type="tel" autocomplete="tel" placeholder="(11) 91234-5678" required>
+          </div>
+        </div>
+        <div class="campos">
+          <div class="campo">
+            <label for="senha">Senha</label>
+            <input id="senha" name="senha" type="password" autocomplete="new-password" required>
+            <p class="ajuda">Mínimo de 8 caracteres, com letras e números.</p>
+          </div>
+          <div class="campo">
+            <label for="confirmar">Confirme a senha</label>
+            <input id="confirmar" type="password" autocomplete="new-password" required>
+          </div>
+        </div>
+
+        <hr class="separador">
+        <h3>Endereço de entrega</h3>
+        <div class="campos">
+          <div class="campo">
+            <label for="cep">CEP <span class="suave">(opcional)</span></label>
+            <input id="cep" name="endereco.cep" inputmode="numeric" placeholder="00000-000" maxlength="9">
+          </div>
+          <div class="campo">
+            <label for="apelido">Identificação</label>
+            <input id="apelido" name="endereco.apelido" value="Casa" maxlength="30">
+          </div>
+        </div>
+        <div class="campos">
+          <div class="campo">
+            <label for="logradouro">Rua / Avenida</label>
+            <input id="logradouro" name="endereco.logradouro" autocomplete="address-line1" required>
+          </div>
+          <div class="campo">
+            <label for="numero">Número</label>
+            <input id="numero" name="endereco.numero" required maxlength="10">
+          </div>
+        </div>
+        <div class="campos">
+          <div class="campo">
+            <label for="complemento">Complemento <span class="suave">(opcional)</span></label>
+            <input id="complemento" name="endereco.complemento" maxlength="60">
+          </div>
+          <div class="campo">
+            <label for="bairro">Bairro</label>
+            <select id="bairro" name="endereco.bairro_id" required></select>
+          </div>
+        </div>
+        <div id="aviso-bairro" class="mensagem info oculto"></div>
+        <div class="campo">
+          <label for="referencia">Ponto de referência <span class="suave">(opcional)</span></label>
+          <input id="referencia" name="endereco.referencia" maxlength="120">
+        </div>
+
+        <hr class="separador">
+        <label class="caixa-checagem">
+          <input type="checkbox" name="consentimento" required>
+          <span>Li e concordo com a <a href="/privacidade" target="_blank">Política de Privacidade</a> e autorizo o uso
+          dos meus dados para processar pedidos e entregas, conforme a LGPD.</span>
+        </label>
+        <p></p>
+        <button type="submit" class="botao bloco">Criar minha conta</button>
+      </form>
+      <p class="centro pequeno">Já tem conta? <a href="/entrar">Entrar</a></p>
+    </div>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/cadastro.js"></script>
+</body>
+</html>

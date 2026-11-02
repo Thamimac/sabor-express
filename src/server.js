@@ -3,12 +3,18 @@ const http = require('node:http');
 const config = require('./config');
 const { App } = require('./lib/http');
 const { getDb } = require('./db/database');
+const { carregarSessao } = require('./lib/sessao');
 
 function criarApp() {
   const app = new App({ publicDir: config.publicDir });
 
+  // Identifica o usuário logado em todas as requisições à API
+  app.use(carregarSessao);
+
   // Rotas de cada módulo (novas linhas serão adicionadas nas próximas partes)
   require('./rotas/geral')(app);
+  require('./rotas/autenticacao')(app);   // Módulo 5
+  require('./rotas/conta')(app);          // Módulo 5
 
   return app;
 }

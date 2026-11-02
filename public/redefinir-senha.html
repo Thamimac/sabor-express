@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nova senha — Sabor Express</title>
+  <link rel="stylesheet" href="/css/estilo.css">
+</head>
+<body>
+  <header class="topo" id="topo"></header>
+  <main class="caixa-estreita">
+    <div class="cartao">
+      <h1>Criar nova senha</h1>
+      <form id="form-redefinir" novalidate>
+        <div class="mensagem oculto" role="alert"></div>
+        <div class="campo">
+          <label for="senha">Nova senha</label>
+          <input id="senha" name="senha" type="password" autocomplete="new-password" required>
+          <p class="ajuda">Mínimo de 8 caracteres, com letras e números.</p>
+        </div>
+        <div class="campo">
+          <label for="confirmar">Confirme a nova senha</label>
+          <input id="confirmar" type="password" autocomplete="new-password" required>
+        </div>
+        <button type="submit" class="botao bloco">Salvar nova senha</button>
+      </form>
+    </div>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/senha.js"></script>
+</body>
+</html>

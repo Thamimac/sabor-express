@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Minha conta — Sabor Express</title>
+  <link rel="stylesheet" href="/css/estilo.css">
+</head>
+<body>
+  <header class="topo" id="topo"></header>
+  <main class="container pagina">
+    <h1 id="titulo">Minha conta</h1>
+    <div id="boas-vindas" class="mensagem sucesso oculto">Conta criada com sucesso! Bem-vindo(a) ao Sabor Express.</div>
+
+    <div class="abas" role="tablist">
+      <button role="tab" aria-selected="true" data-aba="pedidos">Meus pedidos</button>
+      <button role="tab" aria-selected="false" data-aba="enderecos">Endereços</button>
+      <button role="tab" aria-selected="false" data-aba="dados">Meus dados</button>
+      <button role="tab" aria-selected="false" data-aba="privacidade">Privacidade</button>
+    </div>
+
+    <!-- RF25: histórico de pedidos -->
+    <section id="aba-pedidos" role="tabpanel">
+      <ul class="lista" id="lista-pedidos"></ul>
+    </section>
+
+    <!-- RF24: múltiplos endereços -->
+    <section id="aba-enderecos" role="tabpanel" class="oculto">
+      <ul class="lista" id="lista-enderecos"></ul>
+      <p><button type="button" class="botao secundario" id="novo-endereco">+ Adicionar endereço</button></p>
+      <form id="form-endereco" class="cartao oculto" novalidate>
+        <h3 id="titulo-endereco">Novo endereço</h3>
+        <div class="mensagem oculto" role="alert"></div>
+        <input type="hidden" id="endereco-id">
+        <div class="campos">
+          <div class="campo"><label for="e-apelido">Identificação</label><input id="e-apelido" name="apelido" placeholder="Casa, Trabalho…" maxlength="30"></div>
+          <div class="campo"><label for="e-cep">CEP <span class="suave">(opcional)</span></label><input id="e-cep" name="cep" maxlength="9"></div>
+        </div>
+        <div class="campos">
+          <div class="campo"><label for="e-logradouro">Rua / Avenida</label><input id="e-logradouro" name="logradouro" required></div>
+          <div class="campo"><label for="e-numero">Número</label><input id="e-numero" name="numero" required maxlength="10"></div>
+        </div>
+        <div class="campos">
+          <div class="campo"><label for="e-complemento">Complemento</label><input id="e-complemento" name="complemento" maxlength="60"></div>
+          <div class="campo"><label for="e-bairro">Bairro</label><select id="e-bairro" name="bairro_id" required></select></div>
+        </div>
+        <div class="campo"><label for="e-referencia">Ponto de referência</label><input id="e-referencia" name="referencia" maxlength="120"></div>
+        <div class="linha">
+          <button type="submit" class="botao">Salvar endereço</button>
+          <button type="button" class="botao neutro" id="cancelar-endereco">Cancelar</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="aba-dados" role="tabpanel" class="oculto">
+      <div class="grade">
+        <form id="form-dados" class="cartao" novalidate>
+          <h3>Dados pessoais</h3>
+          <div class="mensagem oculto" role="alert"></div>
+          <div class="campo"><label for="d-nome">Nome</label><input id="d-nome" name="nome" required maxlength="80"></div>
+          <div class="campo"><label for="d-email">E-mail</label><input id="d-email" disabled></div>
+          <div class="campo"><label for="d-telefone">Celular</label><input id="d-telefone" name="telefone" type="tel" required></div>
+          <button type="submit" class="botao">Salvar</button>
+        </form>
+        <form id="form-senha" class="cartao" novalidate>
+          <h3>Alterar senha</h3>
+          <div class="mensagem oculto" role="alert"></div>
+          <div class="campo"><label for="s-atual">Senha atual</label><input id="s-atual" name="senhaAtual" type="password" autocomplete="current-password" required></div>
+          <div class="campo"><label for="s-nova">Nova senha</label><input id="s-nova" name="novaSenha" type="password" autocomplete="new-password" required>
+            <p class="ajuda">Mínimo de 8 caracteres, com letras e números.</p></div>
+          <button type="submit" class="botao">Alterar senha</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- LGPD: portabilidade e exclusão -->
+    <section id="aba-privacidade" role="tabpanel" class="oculto">
+      <div class="grade">
+        <div class="cartao">
+          <h3>Baixar meus dados</h3>
+          <p class="suave">Receba uma cópia dos seus dados pessoais, endereços e pedidos em formato JSON (LGPD, art. 18).</p>
+          <a class="botao secundario" href="/api/conta/meus-dados" download>Baixar meus dados</a>
+          <p class="pequeno suave" id="consentimento"></p>
+        </div>
+        <form id="form-excluir" class="cartao zona-perigo" novalidate>
+          <h3>Excluir minha conta</h3>
+          <p class="suave">Seus dados pessoais serão anonimizados e você não poderá mais entrar com este e-mail.
+            Os registros de pedidos são mantidos apenas para fins fiscais.</p>
+          <div class="mensagem oculto" role="alert"></div>
+          <div class="campo"><label for="x-senha">Confirme sua senha</label><input id="x-senha" name="senha" type="password" required></div>
+          <button type="submit" class="botao perigo">Excluir minha conta</button>
+        </form>
+      </div>
+    </section>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/conta.js"></script>
+</body>
+</html>

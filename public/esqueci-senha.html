@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recuperar senha — Sabor Express</title>
+  <link rel="stylesheet" href="/css/estilo.css">
+</head>
+<body>
+  <header class="topo" id="topo"></header>
+  <main class="caixa-estreita">
+    <div class="cartao">
+      <h1>Recuperar senha</h1>
+      <p class="suave">Informe o e-mail da sua conta. Enviaremos um link para você criar uma nova senha.</p>
+      <form id="form-esqueci" novalidate>
+        <div class="mensagem oculto" role="alert"></div>
+        <div class="campo">
+          <label for="email">E-mail</label>
+          <input id="email" name="email" type="email" autocomplete="email" required>
+        </div>
+        <button type="submit" class="botao bloco">Enviar link</button>
+      </form>
+      <p class="centro pequeno"><a href="/entrar">Voltar para o login</a></p>
+    </div>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/senha.js"></script>
+</body>
+</html>
