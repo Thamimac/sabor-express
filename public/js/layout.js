@@ -15,6 +15,7 @@ const PAINEIS = [
   ['/equipe/atendimento', 'Atendimento', ['atendente']],
   ['/equipe/cozinha', 'Cozinha', ['cozinha', 'atendente']],
   ['/equipe/logistica', 'Logística', ['logistica']],
+  ['/equipe/financeiro', 'Financeiro', ['financeiro']], 
 ];
 const paineisDo = (u) => PAINEIS.filter(([, , perfis]) => u.perfil === 'gerente' || perfis.includes(u.perfil));
 

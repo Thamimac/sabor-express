@@ -5,6 +5,7 @@ const { App } = require('./lib/http');
 const { getDb } = require('./db/database');
 const { carregarSessao } = require('./lib/sessao');
   require('./services/notificacoes');
+  require('./services/pagamentos');
 
 function criarApp() {
   const app = new App({ publicDir: config.publicDir });
@@ -19,7 +20,8 @@ function criarApp() {
   require('./rotas/pedidos')(app);        
   require('./rotas/equipe')(app); 
   require('./rotas/logistica')(app);     
-
+  require('./rotas/financeiro')(app);
+  
   return app;
 }
 

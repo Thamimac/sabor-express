@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Financeiro — Sabor Express</title>
+  <link rel="stylesheet" href="/css/estilo.css">
+</head>
+<body class="painel">
+  <header class="topo" id="topo"></header>
+  <main class="container-largo pagina">
+    <h1>Financeiro</h1>
+
+    <div class="abas" role="tablist">
+      <button role="tab" aria-selected="true" data-aba="resumo">Resumo do dia</button>
+      <button role="tab" aria-selected="false" data-aba="faturamento">Faturamento</button>
+      <button role="tab" aria-selected="false" data-aba="pagamentos">Pagamentos</button>
+      <button role="tab" aria-selected="false" data-aba="conciliacao">Conciliação</button>
+      <button role="tab" aria-selected="false" data-aba="fiscal">Fiscal</button>
+    </div>
+
+    <section id="aba-resumo" role="tabpanel">
+      <div class="indicadores" id="ind-resumo"></div>
+      <div class="grade" style="margin-top:1rem">
+        <div class="cartao"><h3>Por forma de pagamento (hoje)</h3><table><tbody id="por-forma"></tbody></table></div>
+        <div class="cartao"><h3>Por modalidade (hoje)</h3><table><tbody id="por-modalidade"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- RF18: relatórios de faturamento -->
+    <section id="aba-faturamento" role="tabpanel" class="oculto">
+      <form class="linha filtros" id="form-faturamento">
+        <div><label for="f-agrup">Agrupar por</label>
+          <select id="f-agrup" name="agrupamento"><option value="diario">Dia</option><option value="semanal">Semana</option><option value="mensal">Mês</option></select></div>
+        <div><label for="f-inicio">De</label><input type="date" id="f-inicio" name="inicio"></div>
+        <div><label for="f-fim">Até</label><input type="date" id="f-fim" name="fim"></div>
+        <button type="submit" class="botao">Gerar relatório</button>
+        <a class="botao secundario" id="exportar-faturamento" href="#">Exportar para Excel (CSV)</a>
+      </form>
+      <div class="tabela-rolagem cartao" style="padding:0">
+        <table>
+          <thead><tr><th>Período</th><th class="num">Pagamentos</th><th class="num">Bruto</th><th class="num">Estornado</th><th class="num">Líquido</th><th class="num">Ticket médio</th></tr></thead>
+          <tbody id="tabela-faturamento"></tbody>
+          <tfoot id="total-faturamento"></tfoot>
+        </table>
+      </div>
+    </section>
+
+    <!-- RF19: status dos pagamentos -->
+    <section id="aba-pagamentos" role="tabpanel" class="oculto">
+      <form class="linha filtros" id="form-pagamentos">
+        <div><label for="p-status">Status</label>
+          <select id="p-status" name="status"><option value="">Todos</option><option value="pendente">Pendente</option><option value="aprovado">Aprovado</option>
+            <option value="recusado">Recusado</option><option value="estornado">Estornado</option><option value="cancelado">Cancelado</option></select></div>
+        <div><label for="p-inicio">De</label><input type="date" id="p-inicio" name="inicio"></div>
+        <div><label for="p-fim">Até</label><input type="date" id="p-fim" name="fim"></div>
+        <button type="submit" class="botao">Filtrar</button>
+      </form>
+      <div class="tabela-rolagem cartao" style="padding:0">
+        <table>
+          <thead><tr><th>Pedido</th><th>Data</th><th>Cliente</th><th>Forma</th><th class="num">Valor</th><th>Pagamento</th><th>Pedido</th><th></th></tr></thead>
+          <tbody id="tabela-pagamentos"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- RF20: conciliação pedidos × pagamentos -->
+    <section id="aba-conciliacao" role="tabpanel" class="oculto">
+      <form class="linha filtros" id="form-conciliacao">
+        <div><label for="c-inicio">De</label><input type="date" id="c-inicio" name="inicio"></div>
+        <div><label for="c-fim">Até</label><input type="date" id="c-fim" name="fim"></div>
+        <button type="submit" class="botao">Conciliar</button>
+      </form>
+      <div class="indicadores" id="ind-conciliacao"></div>
+      <h3 style="margin-top:1.5rem">Divergências</h3>
+      <div class="tabela-rolagem cartao" style="padding:0">
+        <table>
+          <thead><tr><th>Pedido</th><th>Data</th><th>Cliente</th><th class="num">Total</th><th>Pedido</th><th>Pagamento</th><th>Problema</th><th></th></tr></thead>
+          <tbody id="tabela-divergencias"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Regra de domínio 7: transações fiscais -->
+    <section id="aba-fiscal" role="tabpanel" class="oculto">
+      <div class="linha entre">
+        <p class="suave">Todo pagamento aprovado gera uma transação para emissão de nota fiscal pela contabilidade terceirizada.</p>
+        <a class="botao secundario" href="/api/financeiro/fiscal?formato=csv">Exportar para a contabilidade (CSV)</a>
+      </div>
+      <div class="tabela-rolagem cartao" style="padding:0">
+        <table>
+          <thead><tr><th>Data</th><th>Pedido</th><th>Cliente</th><th>Forma</th><th class="num">Valor</th><th>Situação</th><th>Nº da nota</th><th></th></tr></thead>
+          <tbody id="tabela-fiscal"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/financeiro.js"></script>
+</body>
+</html>

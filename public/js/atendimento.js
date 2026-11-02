@@ -6,8 +6,10 @@
   const PAGAMENTO = { pendente: ['Pendente', 'alerta'], aprovado: ['Pago', 'sucesso'], recusado: ['Recusado', 'erro'], estornado: ['Estornado', 'info'], cancelado: ['Cancelado', ''] };
   const seloPagamento = (s) => `<span class="selo ${PAGAMENTO[s]?.[1] || ''}">${esc(PAGAMENTO[s]?.[0] || s || '—')}</span>`;
   const destino = (p) => (p.modalidade === 'salao' ? `Mesa ${p.mesa}` : p.modalidade === 'retirada' ? 'Retirada' : `Entrega · ${esc(p.endereco_texto || '')}`);
-
-  function cartao(p, acoes = '') {
+  const receber = (p) => (['pendente', 'recusado'].includes(p.pagamento_status) && p.status !== 'aguardando_confirmacao'
+    ? `<button class="botao pequeno secundario" data-receber="${p.codigo}">Receber ${esc(FORMA_PAGAMENTO[p.forma_pagamento])}</button>` : '');
+  
+    function cartao(p, acoes = '') {
     return `
       <article class="cartao-pedido ${p.status === 'aguardando_confirmacao' ? 'novo' : ''}">
         <div class="linha entre">
@@ -19,8 +21,8 @@
         <ul class="itens-compactos">${p.itens.map((i) => `<li>${i.quantidade}× ${esc(i.nome)}${i.observacao ? ` <em>(${esc(i.observacao)})</em>` : ''}</li>`).join('')}</ul>
         ${p.observacoes ? `<p class="pequeno"><strong>Obs.:</strong> ${esc(p.observacoes)}</p>` : ''}
         ${p.entregador_nome ? `<p class="pequeno">🛵 ${esc(p.entregador_nome)}</p>` : ''}
-        <div class="linha entre"><strong>${formatar.reais(p.total_centavos)}</strong><div class="linha">${acoes}</div></div>
-      </article>`;
+        <div class="linha entre"><strong>${formatar.reais(p.total_centavos)}</strong><div class="linha">${acoes}${receber(p)}</div></div>      
+        </article>`;
   }
 
   async function carregar() {
@@ -56,6 +58,13 @@
 
   // Ações dos botões dos cartões
   $('main').addEventListener('click', async (e) => {
+    const r = e.target.closest('[data-receber]');
+    if (r) {
+      if (!confirm(`Confirmar o recebimento do pagamento do pedido ${r.dataset.receber}?`)) return;
+      try { await api.post(`/api/financeiro/pagamentos/${r.dataset.receber}/receber`); avisar('Pagamento registrado'); carregar(); } catch (err) { avisar(err.message, 'erro'); }
+      return;
+    }
+
     const b = e.target.closest('[data-acao]');
     if (!b) return;
     const corpo = { status: b.dataset.acao };
