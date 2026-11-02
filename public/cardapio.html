@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cardápio — Sabor Express</title>
+  <link rel="stylesheet" href="/css/estilo.css">
+</head>
+<body>
+  <header class="topo" id="topo"></header>
+
+  <main class="pagina">
+    <!-- RF01: cardápio digital por categorias -->
+    <section class="container layout-cardapio">
+      <div>
+        <div class="linha entre">
+          <h1>Cardápio</h1>
+          <div id="situacao" class="linha" aria-live="polite"></div>
+        </div>
+        <div id="aviso-mesa" class="mensagem info oculto" role="status"></div>
+        <nav class="chips" id="chips" aria-label="Categorias"></nav>
+        <div id="categorias"><p class="suave">Carregando cardápio…</p></div>
+      </div>
+
+      <!-- Carrinho (computador/tablet) -->
+      <aside class="cartao carrinho-lateral" aria-label="Seu pedido">
+        <h3>Seu pedido</h3>
+        <ul class="carrinho-itens" id="carrinho-itens"></ul>
+        <div class="linha entre carrinho-total"><span>Subtotal</span><strong id="carrinho-subtotal">R$ 0,00</strong></div>
+        <p class="pequeno suave" id="carrinho-dica">Taxa de entrega calculada na próxima etapa.</p>
+        <a class="botao bloco" id="botao-finalizar" href="/checkout">Finalizar pedido</a>
+      </aside>
+    </section>
+  </main>
+
+  <!-- Carrinho (celular) -->
+  <a class="barra-carrinho oculto" id="barra-carrinho" href="/checkout">
+    <span id="barra-qtd">0 itens</span><strong>Ver pedido · <span id="barra-total">R$ 0,00</span></strong>
+  </a>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/layout.js"></script>
+  <script src="/js/carrinho.js"></script>
+  <script src="/js/cardapio.js"></script>
+</body>
+</html>

@@ -16,12 +16,20 @@
     : '<option value="">Nenhum endereço cadastrado</option>';
 
   const valor = (nome) => form.querySelector(`[name="${nome}"]:checked`)?.value;
+  
+  // Veio pelo QR Code da mesa: já escolhe "Salão" com o número da mesa
+  let mesaQr = null;
+  try { mesaQr = sessionStorage.getItem('sabor-express-mesa'); } catch { /* sem armazenamento */ }
+  if (mesaQr) {
+    form.querySelector('[name="modalidade"][value="salao"]').checked = true;
+    $('#mesa').value = mesaQr;
+  }
 
   // ---- Itens (quantidade e observação por item) ----
   function desenharLinhas() {
     const itens = Carrinho.ler();
     if (!itens.length) {
-      $('#linhas').innerHTML = '<li class="vazio">Seu pedido está vazio.<br><br><a class="botao" href="/#cardapio">Ver o cardápio</a></li>';
+      $('#linhas').innerHTML = '<li class="vazio">Seu pedido está vazio.<br><br><a class="botao" href="/cardapio">Ver o cardápio</a></li>';
       return;
     }
     $('#linhas').innerHTML = itens.map((i) => `

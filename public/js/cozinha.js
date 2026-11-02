@@ -13,8 +13,8 @@
       <article class="cartao-pedido cozinha-cartao" data-pedido="${p.codigo}">
         <div class="linha entre">
           <strong class="codigo-grande">${esc(p.codigo)}</strong>
-          <span class="selo sem-ponto">${ICONE[p.modalidade]} ${esc(p.modalidade === 'salao' ? `Mesa ${p.mesa}` : MODALIDADE[p.modalidade])}</span>
-        </div>
+          <span class="linha"><span class="selo sem-ponto">${ICONE[p.modalidade]} ${esc(p.modalidade === 'salao' ? `Mesa ${p.mesa}` : MODALIDADE[p.modalidade])}</span>
+            <a class="botao neutro pequeno" href="/equipe/comanda?codigo=${encodeURIComponent(p.codigo)}&imprimir=1" target="_blank" title="Imprimir comanda">🖨</a></span>        </div>
         ${p.status === 'em_preparo' ? `
           <div class="cronometro" data-inicio="${p.preparo_inicio_em}" data-estimado="${p.preparo_estimado_min}">
             <span class="tempo">00:00</span><span class="suave pequeno"> / previsto ${p.preparo_estimado_min} min</span>

@@ -7,7 +7,8 @@
   const indicador = (rotulo, valor, classe = '') => `<div class="indicador ${classe}"><span>${rotulo}</span><strong>${valor}</strong></div>`;
   const precoTexto = (c) => (c / 100).toFixed(2).replace('.', ',');
 
-  const carregadores = { visao: carregarVisao, cardapio: carregarCardapio, equipe: carregarEquipe, config: carregarConfig,
+  const carregadores = { visao: carregarVisao, cardapio: carregarCardapio, avaliacoes: carregarAvaliacoes, mesas: carregarMesas,
+    equipe: carregarEquipe, config: carregarConfig,
     auditoria: carregarAuditoria, emails: carregarEmails, backup: carregarBackups };
   let abaAtual = 'visao';
   function abrirAba(nome) {
@@ -35,6 +36,7 @@
       indicador('Ticket médio (7 dias)', formatar.reais(d.semana.total.ticketMedio)),
       indicador('Tempo médio de preparo', d.hoje.tempoMedioPreparoMin != null ? `${String(d.hoje.tempoMedioPreparoMin).replace('.', ',')} min` : '—'),
       indicador('Metas do SLA cumpridas', `${d.sla.cumpridos} de 5`, d.sla.descumpridos ? 'alerta' : ''),
+      indicador('Satisfação (30 dias)', d.satisfacao.total ? `${String(d.satisfacao.media).replace('.', ',')} ★` : '—', d.satisfacao.media && d.satisfacao.media < 4 ? 'alerta' : ''),
       indicador('Clientes cadastrados', d.clientes),
     ].join('');
     $('#semana').innerHTML = d.semana.linhas.map((l) => `<tr><td>${new Date(`${l.periodo}T12:00:00`).toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })}</td>
@@ -63,7 +65,7 @@
         <div class="tabela-rolagem"><table>
           <thead><tr><th>Item</th><th class="num">Preço</th><th>Situação</th><th></th></tr></thead>
           <tbody>${c.itens.map((i) => `<tr class="${i.disponivel ? '' : 'suave'}">
-            <td><strong>${esc(i.nome)}</strong> ${i.destaque ? '<span class="selo alerta sem-ponto">Destaque</span>' : ''}<br><small class="suave">${esc(i.descricao || '')}</small></td>
+            <td><div class="linha">${i.foto ? `<img class="miniatura" src="${esc(i.foto)}" alt="">` : ''}<div><strong>${esc(i.nome)}</strong> ${i.destaque ? '<span class="selo alerta sem-ponto">Destaque</span>' : ''}<br><small class="suave">${esc(i.descricao || '')}</small></div></div></td>
             <td class="num">${formatar.reais(i.preco_centavos)}</td>
             <td>${i.disponivel ? '<span class="selo sucesso">Disponível</span>' : '<span class="selo erro">Indisponível</span>'}</td>
             <td><div class="linha"><button class="botao neutro pequeno" data-editar="${i.id}">Editar</button>
@@ -73,8 +75,18 @@
       </section>`).join('');
   }
   const dialogo = $('#dialogo-item');
+  let fotoNova = null;     // foto escolhida (JPEG reduzido, em base64)
+  let removerFoto = false; // gerente pediu para tirar a foto atual
+  function mostrarPrevia(src) {
+    $('#it-previa').src = src || '';
+    $('#it-previa').classList.toggle('oculto', !src);
+    $('#it-remover-foto').classList.toggle('oculto', !src);
+  }
   function abrirItem(item = null) {
     $('#form-item').reset();
+    fotoNova = null;
+    removerFoto = false;
+    mostrarPrevia(item?.foto || null);
     $('#titulo-item').textContent = item ? 'Editar item' : 'Novo item';
     $('#it-id').value = item?.id || '';
     $('#it-nome').value = item?.nome || '';
@@ -85,18 +97,92 @@
     $('#it-dest').checked = !!item?.destaque;
     dialogo.showModal();
   }
+  // Reduz a foto no navegador (máx. 800 px, JPEG) antes de enviar: arquivos leves e cardápio rápido
+  function reduzirFoto(arquivo) {
+    return new Promise((ok, erro) => {
+      const img = new Image();
+      img.onload = () => {
+        const escala = Math.min(1, 800 / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * escala);
+        c.height = Math.round(img.height * escala);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        ok(c.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = () => erro(new Error('Não foi possível ler esta imagem'));
+      const leitor = new FileReader(); // lê como "data:" (permitido pela política de segurança da página)
+      leitor.onload = () => { img.src = leitor.result; };
+      leitor.onerror = () => erro(new Error('Não foi possível ler o arquivo'));
+      leitor.readAsDataURL(arquivo);
+    });
+  }
+  $('#it-foto').addEventListener('change', async (e) => {
+    const arquivo = e.target.files[0];
+    if (!arquivo) return;
+    try { fotoNova = await reduzirFoto(arquivo); removerFoto = false; mostrarPrevia(fotoNova); } catch (err) { avisar(err.message, 'erro'); }
+  });
+  $('#it-remover-foto').addEventListener('click', () => { fotoNova = null; removerFoto = true; $('#it-foto').value = ''; mostrarPrevia(null); });
   $('#novo-item').addEventListener('click', () => abrirItem());
   dialogo.querySelector('[data-fechar]').addEventListener('click', () => dialogo.close());
   $('#form-item').addEventListener('submit', (e) => {
     e.preventDefault();
     enviarFormulario(e.target, async (dados) => {
-      const id = $('#it-id').value;
-      if (id) await api.put(`/api/gestao/itens/${id}`, dados); else await api.post('/api/gestao/itens', dados);
+      let id = $('#it-id').value;
+      if (id) await api.put(`/api/gestao/itens/${id}`, dados); else id = (await api.post('/api/gestao/itens', dados)).id;
+      if (fotoNova) await api.post(`/api/gestao/itens/${id}/foto`, { imagem: fotoNova });
+      else if (removerFoto) await api.delete(`/api/gestao/itens/${id}/foto`);
       dialogo.close();
       avisar('Cardápio atualizado');
       carregarCardapio();
     });
   });
+
+  // ---- Avaliações dos clientes ----
+  async function carregarAvaliacoes() {
+    const r = await api.get('/api/gestao/avaliacoes?dias=30');
+    const estrelas = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
+    const noPrazo = r.porPrazo.find((x) => x.prazo === 'no_prazo');
+    const atrasado = r.porPrazo.find((x) => x.prazo === 'atrasado');
+    $('#ind-avaliacoes').innerHTML = [
+      indicador('Nota média (30 dias)', r.total ? `${String(r.media).replace('.', ',')} ★` : '—'),
+      indicador('Avaliações recebidas', r.total),
+      indicador('Satisfeitos (4 ou 5 ★)', r.total ? `${Math.round(((r.distribuicao[5] + r.distribuicao[4]) / r.total) * 100)}%` : '—'),
+      indicador('Insatisfeitos (1 ou 2 ★)', r.total ? `${Math.round(((r.distribuicao[1] + r.distribuicao[2]) / r.total) * 100)}%` : '—',
+        r.total && (r.distribuicao[1] + r.distribuicao[2]) / r.total > 0.1 ? 'alerta' : ''),
+    ].join('');
+    $('#distribuicao').innerHTML = [5, 4, 3, 2, 1].map((n) => {
+      const pct = r.total ? Math.round((r.distribuicao[n] / r.total) * 100) : 0;
+      return `<tr><td class="estrelas-fixas">${estrelas(n)}</td><td style="width:50%"><div class="trajeto"><div style="width:${pct}%"></div></div></td>
+        <td class="num">${r.distribuicao[n]} (${pct}%)</td></tr>`;
+    }).join('');
+    $('#por-prazo').innerHTML = `
+      <tr><td>Entregues no prazo</td><td class="num"><strong>${noPrazo ? String(noPrazo.media).replace('.', ',') : '—'} ★</strong></td><td class="num">${noPrazo?.total || 0} avaliações</td></tr>
+      <tr><td>Entregues com atraso</td><td class="num"><strong class="texto-erro">${atrasado ? String(atrasado.media).replace('.', ',') : '—'} ★</strong></td><td class="num">${atrasado?.total || 0} avaliações</td></tr>`;
+    $('#lista-avaliacoes').innerHTML = r.ultimas.map((a) => `<li><div class="linha entre">
+      <span><span class="estrelas-fixas">${estrelas(a.nota)}</span> <strong>${esc(a.cliente_nome)}</strong> · pedido ${esc(a.codigo)}</span>
+      <span class="pequeno suave">${formatar.dataHora(a.criado_em)}</span></div>${a.comentario ? `<p>“${esc(a.comentario)}”</p>` : ''}</li>`).join('')
+      || '<li class="vazio">Nenhuma avaliação ainda.</li>';
+  }
+
+  // ---- QR Code das mesas ----
+  let redeCarregada = false;
+  async function carregarMesas() {
+    if (!redeCarregada) {
+      const r = await api.get('/api/gestao/rede');
+      $('#enderecos-rede').innerHTML = [...r.enderecos, r.atual].map((e) => `<option value="${esc(e)}">`).join('');
+      $('#mesa-url').value = r.enderecos[0] || r.atual;
+      redeCarregada = true;
+    }
+    const base = $('#mesa-url').value.replace(/\/+$/, '');
+    const qtd = Math.min(Math.max(Number($('#mesa-qtd').value) || 1, 1), 40);
+    $('#grade-mesas').innerHTML = Array.from({ length: qtd }, (_, i) => {
+      const url = `${base}/cardapio?mesa=${i + 1}`;
+      return `<div class="cartao-mesa"><strong class="numero-mesa">Mesa ${i + 1}</strong>${QR.svg(url, { tamanho: 180 })}
+        <span>Aponte a câmera do celular<br>para ver o cardápio e pedir</span><small>${esc(url)}</small></div>`;
+    }).join('');
+  }
+  $('#form-mesas').addEventListener('submit', (e) => { e.preventDefault(); carregarMesas(); });
+  $('#imprimir-mesas').addEventListener('click', () => window.print());
 
   // ---- Equipe ----
   async function carregarEquipe() {

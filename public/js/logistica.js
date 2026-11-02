@@ -6,12 +6,14 @@
   const NOME_OCORRENCIA = { atraso: 'Atraso', endereco_nao_encontrado: 'Endereço não encontrado', avaria: 'Avaria',
     extravio: 'Extravio', cliente_ausente: 'Cliente ausente', outro: 'Outro' };
   let painel = null;
+  let previsoes = {}; // previsão de chegada de cada entrega (RF14)
 
   // ---- Abas ----
   function abrirAba(nome) {
     $$('.abas button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.aba === nome)));
     $$('[role="tabpanel"]').forEach((s) => s.classList.toggle('oculto', s.id !== `aba-${nome}`));
     if (nome === 'sla') carregarSla();
+    if (nome === 'mapa') carregarMapa();
     if (nome === 'entregadores') carregarEntregadores();
   }
   $$('.abas button').forEach((b) => b.addEventListener('click', () => abrirAba(b.dataset.aba)));
@@ -35,7 +37,9 @@
   }
 
   async function carregar() {
-    painel = await api.get('/api/logistica/painel');
+    const [p, r] = await Promise.all([api.get('/api/logistica/painel'), api.get('/api/logistica/rastreamento')]);
+    painel = p;
+    previsoes = Object.fromEntries(r.entregas.map((e) => [e.codigo, e]));
     const { sla } = painel;
     $('#meta-aceite').textContent = sla.aceiteMin;
     $('#meta-entrega').textContent = sla.entregaMin;
@@ -45,6 +49,7 @@
 
     $('#col-prontos').innerHTML = painel.prontos.map((p) => cartao(p, `
       ${cronometro(p.pronto_em, sla.entregaMin, 'desde que ficou pronto')}
+      ${previsao(p.codigo, 'Se despachar agora, chega por volta de')}
       <div class="linha">
         <select data-entregador="${p.codigo}" aria-label="Entregador" style="flex:1">${opcoes}</select>
         <button class="botao pequeno" data-despachar="${p.codigo}">Despachar</button>
@@ -62,6 +67,7 @@
 
     $('#col-rota').innerHTML = painel.a_caminho.map((p) => cartao(p, `
       <p class="pequeno">🛵 <strong>${esc(p.entregador_nome)}</strong> saiu às ${formatar.hora(p.aceite_em)}</p>
+      ${previsao(p.codigo, 'Chegada prevista')}
       ${cronometro(p.pronto_em, sla.entregaMin, 'desde que ficou pronto')}
       <div class="linha">
         <button class="botao pequeno neutro" data-ocorrencia="${p.codigo}">Ocorrência</button>
@@ -105,6 +111,69 @@
     });
   }
   setInterval(atualizarCronometros, 1000);
+
+  // Linha com a previsão de chegada e a barra do trajeto
+  function previsao(codigo, rotulo) {
+    const e = previsoes[codigo];
+    if (!e) return '';
+    return `<div class="previsao ${e.atrasado ? 'atrasado' : ''}">
+      <div class="linha entre pequeno"><span>${rotulo} <strong>${formatar.hora(e.chegada_prevista)}</strong></span>
+        <span>${e.status === 'a_caminho' ? `faltam ~${e.minutos_restantes} min` : `~${e.minutos_restantes} min`}</span></div>
+      ${e.status === 'a_caminho' ? `<div class="trajeto"><div style="width:${Math.round(e.progresso * 100)}%"></div></div>` : ''}
+      ${e.atrasado ? '<span class="pequeno">⚠ Pode passar do prazo do SLA</span>' : ''}</div>`;
+  }
+
+  // ---- Acompanhamento no mapa (RF13 e RF14) ----
+  const ESCALA = 48; // pixels por km no mapa
+  const pt = (c) => ({ x: c.x * ESCALA, y: -c.y * ESCALA }); // norte para cima
+  const corDe = (e) => (e.status !== 'a_caminho' ? 'aguardando' : e.atrasado ? 'atrasado' : 'no-prazo');
+
+  async function carregarMapa() {
+    const d = await api.get('/api/logistica/rastreamento');
+    const taxas = { 3: 'R$ 5', 5: 'R$ 8', 8: 'R$ 12' };
+    const aneis = [...d.faixas].reverse().map((km, i) => `
+      <circle class="anel anel-${i}" r="${km * ESCALA}"></circle>
+      <text class="rotulo-anel" x="0" y="${-km * ESCALA + 16}" text-anchor="middle">${km} km · ${taxas[km] || ''}</text>`).join('');
+    const bairros = d.bairros.filter((b) => b.atende).map((b) => {
+      const p = pt(b);
+      return `<g class="bairro"><circle cx="${p.x}" cy="${p.y}" r="3"></circle><text x="${p.x + 6}" y="${p.y + 4}">${esc(b.nome)}</text></g>`;
+    }).join('');
+    const entregas = d.entregas.map((e) => {
+      const destino = pt(e.destino);
+      const pos = pt(e.posicao);
+      const classe = corDe(e);
+      return `<g class="entrega ${classe}">
+        <line class="rota" x1="0" y1="0" x2="${destino.x}" y2="${destino.y}"></line>
+        <line class="rota-feita" x1="0" y1="0" x2="${pos.x}" y2="${pos.y}"></line>
+        <circle class="destino" cx="${destino.x}" cy="${destino.y}" r="7"></circle>
+        <text class="rotulo-destino" x="${destino.x + 10}" y="${destino.y - 8}">${esc(e.codigo)}</text>
+        ${e.status === 'a_caminho' ? `<g class="moto" transform="translate(${pos.x} ${pos.y})">
+          <circle r="15"></circle><text y="6" text-anchor="middle">🛵</text>
+          <title>${esc(e.codigo)} — ${esc(e.entregador?.nome || '')}: chega ${formatar.hora(e.chegada_prevista)}</title></g>` : ''}
+      </g>`;
+    }).join('');
+    $('#mapa').innerHTML = `<rect x="-420" y="-420" width="840" height="840" class="fundo-mapa"></rect>
+      ${aneis}${bairros}${entregas}
+      <g class="restaurante"><circle r="18"></circle><text y="6" text-anchor="middle">🍽️</text></g>
+      <text class="norte" x="390" y="-390" text-anchor="middle">N ↑</text>`;
+    $('#mapa-atualizado').textContent = `Atualizado às ${formatar.hora(d.atualizado_em)}`;
+
+    $('#lista-rastreamento').innerHTML = d.entregas.map((e) => `
+      <article class="cartao-pedido ${e.atrasado ? 'atrasado' : ''}">
+        <div class="linha entre"><strong class="codigo-grande">${esc(e.codigo)}</strong><span class="selo ${corDe(e) === 'atrasado' ? 'erro' : corDe(e) === 'no-prazo' ? 'sucesso' : ''}">
+          ${e.status === 'a_caminho' ? 'Em rota' : e.status === 'despachado' ? 'Aguardando aceite' : 'Pronto no restaurante'}</span></div>
+        <p class="pequeno">${e.entregador ? `🛵 <strong>${esc(e.entregador.nome)}</strong> · ${esc(e.entregador.telefone || '')} · ${esc(e.entregador.veiculo || '')}<br>` : ''}
+          📍 ${esc(e.endereco || e.bairro)} (${formatar.km(e.distancia_km)})</p>
+        ${e.status === 'a_caminho' ? `<div class="trajeto grande"><div style="width:${Math.round(e.progresso * 100)}%"></div></div>
+          <div class="linha entre pequeno"><span>${Math.round(e.progresso * 100)}% do trajeto · ${formatar.km(e.km_restantes)} restantes</span>
+            <span>${e.origem === 'rotalog' ? '📡 posição da RotaLog' : '⏱ posição estimada'}</span></div>` : ''}
+        <div class="linha entre"><span>Chegada prevista: <strong>${formatar.hora(e.chegada_prevista)}</strong> (~${e.minutos_restantes} min)</span>
+          <span class="pequeno ${e.atrasado ? 'texto-erro' : 'suave'}">Prazo SLA: ${formatar.hora(e.prazo_sla)}</span></div>
+      </article>`).join('') || '<p class="vazio">Nenhuma entrega em andamento.</p>';
+  }
+  // Enquanto o mapa estiver aberto, atualiza a cada 10 segundos
+  setInterval(() => { if (!$('#aba-mapa').classList.contains('oculto')) carregarMapa(); }, 10000);
+  Layout.aoEvento('rastreamento', () => { if (!$('#aba-mapa').classList.contains('oculto')) carregarMapa(); carregar(); });
 
   // ---- Ações ----
   async function executarAcao(botao, url, corpo, mensagem) {
@@ -184,7 +253,7 @@
   }
   $('#periodo').addEventListener('change', carregarSla);
 
-  Layout.aoEvento('pedido', () => carregar());
+  Layout.aoEvento('pedido', () => { carregar(); if (!$('#aba-mapa').classList.contains('oculto')) carregarMapa(); });
   setInterval(carregar, 60000);
   carregar();
 })();

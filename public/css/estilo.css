@@ -297,3 +297,112 @@ tfoot th { background: #f3e9dd; text-transform: none; font-size: .95rem; color: 
 .email-corpo { white-space: pre-wrap; font-family: inherit; font-size: .875rem; background: #faf3ea; padding: .75rem; border-radius: 8px; margin: .5rem 0 0; }
 #tabela-equipe select { min-height: 36px; padding: .3rem .5rem; }
 #aba-visao .grade { grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
+
+
+/* ---- Parte 8.1: acompanhamento dos entregadores ---- */
+.layout-mapa { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1.4fr) minmax(300px, 1fr); align-items: start; }
+.mapa-cartao { padding: .75rem; }
+#mapa { width: 100%; height: auto; display: block; border-radius: 10px; }
+#mapa .fundo-mapa { fill: #f4eee6; }
+#mapa .anel { stroke: #d9c7b2; stroke-width: 1.5; stroke-dasharray: 6 6; }
+#mapa .anel-0 { fill: #f9f1e7; } #mapa .anel-1 { fill: #f6ead9; } #mapa .anel-2 { fill: #f2e2cc; }
+#mapa .rotulo-anel { font-size: 13px; fill: #8a7360; font-weight: 600; }
+#mapa .bairro circle { fill: #b9a58f; }
+#mapa .bairro text { font-size: 11px; fill: #8a7360; }
+#mapa .rota { stroke: #b9a58f; stroke-width: 2; stroke-dasharray: 4 5; }
+#mapa .rota-feita { stroke-width: 4; stroke-linecap: round; }
+#mapa .destino { fill: #fff; stroke-width: 3; }
+#mapa .rotulo-destino { font-size: 13px; font-weight: 700; fill: var(--cor-texto); }
+#mapa .moto circle { fill: #fff; stroke-width: 3; }
+#mapa .moto text, #mapa .restaurante text { font-size: 16px; }
+#mapa .restaurante circle { fill: var(--cor-primaria); }
+#mapa .norte { font-size: 14px; font-weight: 700; fill: #8a7360; }
+#mapa .no-prazo .rota-feita, #mapa .no-prazo .destino, #mapa .no-prazo .moto circle { stroke: var(--cor-sucesso); }
+#mapa .atrasado .rota-feita, #mapa .atrasado .destino, #mapa .atrasado .moto circle { stroke: var(--cor-erro); }
+#mapa .aguardando .destino { stroke: #9a8a7a; }
+.legenda { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: .5rem; align-items: center; }
+.legenda .ponto { display: inline-block; width: .7rem; height: .7rem; border-radius: 50%; margin-right: .3rem; vertical-align: middle; }
+.ponto.no-prazo { background: var(--cor-sucesso); } .ponto.atrasado { background: var(--cor-erro); } .ponto.aguardando { background: #9a8a7a; }
+.trajeto { height: 6px; background: #eee3d6; border-radius: 999px; overflow: hidden; margin: .3rem 0; }
+.trajeto.grande { height: 10px; }
+.trajeto div { height: 100%; background: var(--cor-sucesso); border-radius: 999px; transition: width .8s ease; }
+.previsao.atrasado .trajeto div, .cartao-pedido.atrasado .trajeto div { background: var(--cor-erro); }
+.previsao.atrasado { color: var(--cor-erro); }
+.texto-erro { color: var(--cor-erro); font-weight: 600; }
+@media (max-width: 1000px) { .layout-mapa { grid-template-columns: 1fr; } }
+
+/* ---- Parte 9: página inicial institucional ---- */
+.botao.grande { min-height: 52px; padding: .8rem 1.4rem; font-size: 1.05rem; }
+.sobretitulo { display: block; text-transform: uppercase; letter-spacing: .1em; font-size: .8rem; font-weight: 700; color: var(--cor-primaria); margin-bottom: .5rem; }
+.capa { padding: 4rem 0 3rem; background: radial-gradient(circle at 85% 20%, #f6dfcf 0, transparent 45%), var(--cor-fundo); }
+.capa-grade { display: grid; gap: 2.5rem; grid-template-columns: 1.4fr 1fr; align-items: center; }
+.capa h1 { font-size: clamp(2rem, 4.5vw, 3.1rem); max-width: 18ch; }
+.capa-texto { font-size: 1.15rem; color: var(--cor-texto-suave); max-width: 52ch; margin-bottom: 1.5rem; }
+.capa-numeros { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.capa-numeros div { background: var(--cor-superficie); border: 1px solid var(--cor-borda); border-radius: var(--raio); padding: 1.1rem; box-shadow: var(--sombra); }
+.capa-numeros strong { display: block; font-family: var(--fonte-titulo); font-size: 1.8rem; color: var(--cor-primaria); }
+.capa-numeros span { font-size: .9rem; color: var(--cor-texto-suave); }
+.fundo-suave { background: #f4ebe0; }
+.historia { display: grid; gap: 2.5rem; grid-template-columns: 1.3fr 1fr; align-items: center; }
+.historia p { color: var(--cor-texto-suave); font-size: 1.05rem; max-width: 62ch; }
+.missao { margin: 0; padding: 1.75rem; background: var(--cor-texto); color: #fbf6ef; border-radius: var(--raio); font-family: var(--fonte-titulo); font-size: 1.3rem; line-height: 1.45; }
+.missao .sobretitulo { color: #f2b9a1; font-family: var(--fonte); }
+.valores { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.valores > div { background: var(--cor-superficie); border-radius: var(--raio); padding: 1.25rem; border: 1px solid var(--cor-borda); }
+.valores span { font-size: 1.8rem; }
+.valores h3 { margin: .5rem 0 .25rem; }
+.passos { list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.passos li { position: relative; padding: 1.25rem; border-left: 3px solid var(--cor-primaria); background: var(--cor-superficie); border-radius: 0 var(--raio) var(--raio) 0; }
+.passos li > span { display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--cor-primaria); color: #fff; font-weight: 700; }
+.passos h3 { margin: .6rem 0 .25rem; }
+.destaque-grade { display: grid; gap: 2rem; grid-template-columns: 1fr 1fr; align-items: start; }
+.tabela-taxas { margin-top: .75rem; }
+.visite { display: flex; gap: 2rem; align-items: center; justify-content: space-between; flex-wrap: wrap; background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda); border-radius: var(--raio); padding: 2rem; box-shadow: var(--sombra); }
+@media (max-width: 860px) {
+  .capa { padding: 2rem 0; }
+  .capa-grade, .historia, .destaque-grade { grid-template-columns: 1fr; }
+}
+
+/* ---- Cardápio: fotos dos pratos ---- */
+.categoria h2 { font-family: var(--fonte); font-size: 1.15rem; }
+.item-corpo h3 { margin: 0; font-size: 1rem; }
+.item-foto { width: 104px; height: 104px; object-fit: cover; border-radius: 10px; flex: none; background: #f6ece0; }
+.miniatura { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; }
+.foto-previa { width: 96px; height: 96px; object-fit: cover; border-radius: 8px; }
+
+/* ---- Avaliação do pedido ---- */
+.avaliacao { margin-top: 1.5rem; }
+.estrelas { border: 0; padding: 0; margin: 0 0 1rem; display: inline-flex; flex-direction: row-reverse; gap: .2rem; }
+.estrelas input { position: absolute; opacity: 0; }
+.estrelas label { font-size: 2.2rem; color: #d9c7b2; cursor: pointer; margin: 0; line-height: 1; }
+.estrelas label:hover, .estrelas label:hover ~ label, .estrelas input:checked ~ label { color: #e0a224; }
+.estrelas input:focus-visible + label { outline: 3px solid #e9a23b; border-radius: 4px; }
+.estrelas-fixas { color: #e0a224; letter-spacing: .1em; font-size: 1.1rem; }
+
+/* ---- QR Code das mesas ---- */
+.grade-mesas { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.cartao-mesa { background: #fff; border: 2px dashed #d9c7b2; border-radius: var(--raio); padding: 1rem; display: grid; justify-items: center; gap: .4rem; text-align: center; break-inside: avoid; }
+.numero-mesa { font-family: var(--fonte-titulo); font-size: 1.5rem; color: var(--cor-primaria); }
+.cartao-mesa small { font-size: .7rem; color: var(--cor-texto-suave); word-break: break-all; }
+@media print {
+  body.painel .topo, body.painel .abas, body.painel main > .linha.entre, .nao-imprimir, .avisos { display: none !important; }
+  .grade-mesas { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ---- Comanda para impressora térmica (80 mm) ---- */
+.pagina-comanda { background: #ece3d8; }
+.comanda { page: comanda; width: 76mm; margin: 1.5rem auto 1rem; padding: 4mm; background: #fff; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.35; color: #000; }
+.comanda hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
+.comanda-codigo { font-size: 26px; font-weight: 700; text-align: center; letter-spacing: 2px; }
+.comanda-destino { font-weight: 700; margin: 6px 0 2px; }
+.comanda-item { font-size: 15px; margin: 4px 0; }
+.comanda-obs { font-weight: 700; margin-left: 1rem; }
+@page comanda { size: 80mm auto; margin: 2mm; }
+@media print { .pagina-comanda { background: #fff; } .comanda { margin: 0; } }
+#aba-avaliacoes .grade { grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
+.layout-cardapio > div, .layout-checkout > div { min-width: 0; } /* evita que o conteúdo estique a página no celular */
+@media (max-width: 760px) {
+  .menu > .suave.pequeno { display: none; } /* esconde o "Olá, nome" no celular */
+  .item-foto { width: 84px; height: 84px; }
+}

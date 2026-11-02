@@ -246,3 +246,61 @@ describe('LGPD, auditoria e gestão', () => {
     assert.equal((await u.gerente.get('/api/gestao/painel')).status, 200);
   });
 });
+
+
+describe('Melhorias — avaliação, fotos, rastreamento e QR Code', () => {
+  test('cliente avalia o pedido só depois da entrega, uma única vez', async () => {
+    const p = await novoPedido({ itens: [{ item_id: 2, quantidade: 1 }], modalidade: 'retirada', forma_pagamento: 'pix' });
+    assert.equal((await u.cliente.post(`/api/pedidos/${p.codigo}/avaliacao`, { nota: 5 })).status, 422, 'antes da entrega');
+    for (const [quem, st] of [[u.atendente, 'recebido'], [u.cozinha, 'em_preparo'], [u.cozinha, 'pronto'], [u.atendente, 'entregue']]) await mudar(quem, p.codigo, st);
+    assert.equal((await u.cliente.post(`/api/pedidos/${p.codigo}/avaliacao`, { nota: 9 })).status, 422, 'nota fora de 1 a 5');
+    const r = await u.cliente.post(`/api/pedidos/${p.codigo}/avaliacao`, { nota: 5, comentario: 'Ótimo!' });
+    assert.equal(r.status, 201);
+    assert.equal(r.dados.avaliacao.nota, 5);
+    assert.equal((await u.cliente.post(`/api/pedidos/${p.codigo}/avaliacao`, { nota: 1 })).status, 409, 'não avalia duas vezes');
+    const g = await u.gerente.get('/api/gestao/avaliacoes');
+    assert.ok(g.dados.total >= 1 && g.dados.media > 0);
+  });
+
+  test('gerente envia foto do prato e ela aparece no cardápio', async () => {
+    const jpeg = `data:image/jpeg;base64,${Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0x10, 0x4a, 0x46, 0x49, 0x46]).toString('base64')}`;
+    assert.equal((await u.gerente.post('/api/gestao/itens/3/foto', { imagem: 'data:image/png;base64,AAAA' })).status, 422, 'só JPEG');
+    const r = await u.gerente.post('/api/gestao/itens/3/foto', { imagem: jpeg });
+    assert.match(r.dados.foto, /^\/fotos\/item-3\.jpg/);
+    const cardapio = await usuario(srv.base).get('/api/cardapio');
+    assert.ok(cardapio.dados.categorias[0].itens.find((i) => i.id === 3).foto);
+    await u.gerente.delete('/api/gestao/itens/3/foto');
+    const depois = await usuario(srv.base).get('/api/cardapio');
+    assert.equal(depois.dados.categorias[0].itens.find((i) => i.id === 3).foto, null);
+  });
+
+  test('acompanhamento do entregador: posição estimada, posição da RotaLog e previsão de chegada', async () => {
+    const p = await novoPedido();
+    for (const [quem, st] of [[u.atendente, 'recebido'], [u.cozinha, 'em_preparo'], [u.cozinha, 'pronto']]) await mudar(quem, p.codigo, st);
+    let r = await u.logistica.get('/api/logistica/rastreamento');
+    let e = r.dados.entregas.find((x) => x.codigo === p.codigo);
+    assert.equal(e.origem, 'aguardando');
+    assert.ok(e.chegada_prevista && e.prazo_sla);
+    await u.logistica.post(`/api/logistica/pedidos/${p.codigo}/despachar`, { entregador_id: 2 });
+    await u.logistica.post(`/api/logistica/pedidos/${p.codigo}/a-caminho`);
+    r = await u.logistica.get('/api/logistica/rastreamento');
+    e = r.dados.entregas.find((x) => x.codigo === p.codigo);
+    assert.equal(e.origem, 'estimativa');
+    assert.ok(e.progresso >= 0 && e.progresso < 1);
+
+    const { getDb } = require('../src/db/database');
+    const chave = getDb().prepare("SELECT valor FROM configuracoes WHERE chave = 'rotalog_api_key'").get().valor;
+    const pos = await usuario(srv.base).post('/api/integracao/rotalog', { pedido: p.codigo, evento: 'posicao', progresso: 60 }, { 'X-Api-Key': chave });
+    assert.equal(pos.dados.progresso, 60);
+    r = await u.logistica.get('/api/logistica/rastreamento');
+    e = r.dados.entregas.find((x) => x.codigo === p.codigo);
+    assert.equal(e.origem, 'rotalog');
+    assert.equal(e.progresso, 0.6);
+  });
+
+  test('endereços de rede para o QR Code das mesas (somente gerente)', async () => {
+    assert.equal((await u.atendente.get('/api/gestao/rede')).status, 403);
+    const r = await u.gerente.get('/api/gestao/rede');
+    assert.ok(Array.isArray(r.dados.enderecos));
+  });
+});

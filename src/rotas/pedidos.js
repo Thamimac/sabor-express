@@ -1,6 +1,9 @@
 // Módulo 1 — Cardápio e pedidos (RF01 a RF06) + canal de tempo real
 const { HttpError } = require('../lib/erros');
 const { exigirLogin } = require('../lib/sessao');
+const { um, executar } = require('../db/database');
+const { inteiro, texto, agoraISO } = require('../lib/util');
+const auditoria = require('../services/auditoria');
 const pedidos = require('../services/pedidos');
 const regras = require('../services/regras');
 const { conectar } = require('../services/eventos');
@@ -32,6 +35,20 @@ module.exports = (app) => {
       throw new HttpError(422, 'O pedido já foi confirmado pelo restaurante e não pode mais ser cancelado pelo site. Ligue para nós.');
     }
     return pedidos.mudarStatus(ctx, p.id, 'cancelado', { motivo: ctx.body.motivo });
+  });
+
+  // Avaliação do pedido pelo cliente depois da entrega (satisfação: nota de 1 a 5)
+  app.post('/api/pedidos/:codigo/avaliacao', exigirLogin, (ctx) => {
+    const p = pedidos.obterPermitido(ctx.usuario, ctx.params.codigo);
+    if (p.cliente_id !== ctx.usuario.id) throw new HttpError(403, 'Somente o cliente do pedido pode avaliá-lo');
+    if (p.status !== 'entregue') throw new HttpError(422, 'O pedido só pode ser avaliado depois de entregue');
+    if (um('SELECT id FROM avaliacoes WHERE pedido_id = ?', p.id)) throw new HttpError(409, 'Este pedido já foi avaliado');
+    const nota = inteiro(ctx.body.nota, 'nota', { min: 1, max: 5 });
+    executar('INSERT INTO avaliacoes (pedido_id, cliente_id, nota, comentario, criado_em) VALUES (?, ?, ?, ?, ?)',
+      p.id, ctx.usuario.id, nota, texto(ctx.body.comentario, 'comentário', { obrigatorio: false, max: 300 }), agoraISO());
+    auditoria.registrar(ctx, 'pedido_avaliado', { entidade: 'pedido', id: p.codigo, detalhes: { nota } });
+    ctx.status = 201;
+    return pedidos.obter(p.id);
   });
 
   // Tempo real: o navegador fica "ouvindo" mudanças de status

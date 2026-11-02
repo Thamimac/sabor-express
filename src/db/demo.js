@@ -124,6 +124,20 @@ function criarPedido(criadoEm, etapa, opcoes = {}) {
       id, comPeso({ atraso: 70, cliente_ausente: 15, endereco_nao_encontrado: 10, avaria: 5 }), 'Registrado durante a entrega', equipe.logistica,
       aleatorio() < 0.5 ? 'rotalog' : 'sistema', 'Cliente contatado e entrega concluída', aberta, mais(aberta, entre(4, 18)));
   }
+
+    // Avaliação do cliente: entregas atrasadas tendem a receber notas menores
+  if (cliente && etapa === 'entregue' && aleatorio() < 0.6) {
+    const atrasou = end && (new Date(t.entregue) - new Date(t.pronto)) / 60000 > config.sla.entregaMin;
+    const nota = atrasou ? comPeso({ 1: 15, 2: 30, 3: 35, 4: 15, 5: 5 }) : comPeso({ 3: 8, 4: 32, 5: 60 });
+    const comentarios = {
+      1: ['Demorou demais e chegou frio.'], 2: ['Atrasou bastante.', 'Comida boa, mas a entrega demorou.'],
+      3: ['Ok, mas poderia ser mais rápido.', 'Razoável.'], 4: ['Muito bom!', 'Gostei, voltarei a pedir.', 'Chegou certinho.'],
+      5: ['Perfeito, chegou quentinho!', 'A feijoada é a melhor da região!', 'Entrega super rápida.', 'Excelente atendimento.'],
+    };
+    run('INSERT INTO avaliacoes (pedido_id, cliente_id, nota, comentario, criado_em) VALUES (?, ?, ?, ?, ?)',
+      id, cliente.id, Number(nota), aleatorio() < 0.7 ? sortear(comentarios[nota]) : null, mais(t.entregue, entre(5, 90)));
+  }
+
   return id;
 }
 
@@ -150,6 +164,7 @@ const aoVivo = [
   [ha(80), 'entregue', { modalidade: 'salao', forma: 'credito' }],
   [ha(70), 'entregue', { modalidade: 'retirada', forma: 'dinheiro', semReceber: true }], // divergência para a conciliação (RF20)
   [ha(38), 'a_caminho', { modalidade: 'entrega', forma: 'pix' }],
+  [ha(33), 'a_caminho', { modalidade: 'entrega', forma: 'credito' }],
   [ha(30), 'despachado', { modalidade: 'entrega', forma: 'credito' }],
   [ha(26), 'pronto', { modalidade: 'entrega', forma: 'dinheiro' }],
   [ha(22), 'pronto', { modalidade: 'entrega', forma: 'pix' }],
@@ -164,6 +179,11 @@ for (const [criado, etapa, op] of aoVivo) criarPedido(criado, etapa, op);
 // Ajusta os tempos dos pedidos ativos para ficarem coerentes com "agora"
 db.prepare("UPDATE pedidos SET preparo_inicio_em = ?, pronto_em = NULL, tempo_preparo_seg = NULL WHERE status = 'em_preparo' AND criado_em >= ?").run(ha(4), inicioDiaUTC(hojeStr));
 db.prepare("UPDATE pedidos SET despachado_em = ? WHERE status = 'despachado' AND criado_em >= ?").run(ha(1), inicioDiaUTC(hojeStr));
+
+// Entregadores em rota: um saiu há pouco e outro já está na metade do caminho (aparecem andando no mapa)
+all("SELECT id FROM pedidos WHERE status = 'a_caminho' AND criado_em >= ? ORDER BY id", inicioDiaUTC(hojeStr)).forEach((p, i) => {
+  db.prepare('UPDATE pedidos SET pronto_em = ?, despachado_em = ?, aceite_em = ? WHERE id = ?').run(ha(9 + i * 8), ha(7 + i * 8), ha(5 + i * 8), p.id);
+});
 
 run("UPDATE configuracoes SET valor = '1' WHERE chave = 'ignorar_horario'"); // modo demonstração ligado
 run("INSERT INTO auditoria (usuario_nome, acao, detalhes, criado_em) VALUES ('Sistema', 'dados_demonstracao_gerados', ?, ?)",

@@ -27,7 +27,7 @@ function desenharTopo() {
   const el = $('#topo');
   if (!el) return;
   const u = Layout.usuario;
-  const links = [['/', u?.equipe ? 'Cardápio' : 'Início']];
+  const links = u?.equipe ? [['/cardapio', 'Cardápio']] : [['/', 'Início'], ['/cardapio', 'Cardápio']];
   if (!u) links.push(['/entrar', 'Entrar'], ['/cadastro', 'Criar conta']);
   else if (u.equipe) links.push(...paineisDo(u).map(([href, nome]) => [href, nome]));
   else links.push(['/conta', 'Minha conta']);

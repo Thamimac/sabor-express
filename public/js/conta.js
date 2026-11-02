@@ -31,7 +31,7 @@
           <a class="botao neutro pequeno" href="/pedido?codigo=${encodeURIComponent(p.codigo)}">Ver detalhes</a>
         </div>
       </li>`).join('')
-      : '<li class="vazio">Você ainda não fez nenhum pedido.<br><br><a class="botao" href="/">Ver o cardápio</a></li>';
+      : '<li class="vazio">Você ainda não fez nenhum pedido.<br><br><a class="botao" href="/cardapio">Ver o cardápio</a></li>';
   }
 
   // ---- Endereços (RF24) ----

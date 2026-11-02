@@ -17,6 +17,8 @@
     <div class="abas" role="tablist">
       <button role="tab" aria-selected="true" data-aba="visao">Visão geral</button>
       <button role="tab" aria-selected="false" data-aba="cardapio">Cardápio</button>
+      <button role="tab" aria-selected="false" data-aba="avaliacoes">Avaliações</button>
+      <button role="tab" aria-selected="false" data-aba="mesas">Mesas (QR Code)</button>
       <button role="tab" aria-selected="false" data-aba="equipe">Equipe</button>
       <button role="tab" aria-selected="false" data-aba="config">Configurações</button>
       <button role="tab" aria-selected="false" data-aba="auditoria">Auditoria</button>
@@ -36,6 +38,31 @@
     <section id="aba-cardapio" role="tabpanel" class="oculto">
       <p><button type="button" class="botao" id="novo-item">+ Novo item</button></p>
       <div id="lista-cardapio"></div>
+    </section>
+
+    <!-- Satisfação dos clientes -->
+    <section id="aba-avaliacoes" role="tabpanel" class="oculto">
+      <div class="indicadores" id="ind-avaliacoes"></div>
+      <div class="grade" style="margin-top:1rem">
+        <div class="cartao"><h3>Distribuição das notas (30 dias)</h3><table><tbody id="distribuicao"></tbody></table></div>
+        <div class="cartao"><h3>Satisfação × pontualidade da entrega</h3><table><tbody id="por-prazo"></tbody></table>
+          <p class="pequeno suave">Compara a nota média das entregas feitas dentro e fora do prazo do SLA (40 min).</p></div>
+      </div>
+      <h3 style="margin-top:1.5rem">Comentários recentes</h3>
+      <ul class="lista" id="lista-avaliacoes"></ul>
+    </section>
+
+    <!-- QR Code das mesas do salão -->
+    <section id="aba-mesas" role="tabpanel" class="oculto">
+      <form class="linha filtros nao-imprimir" id="form-mesas">
+        <div style="flex:2;min-width:260px"><label for="mesa-url">Endereço do sistema na rede</label><input id="mesa-url" list="enderecos-rede">
+          <datalist id="enderecos-rede"></datalist></div>
+        <div><label for="mesa-qtd">Quantidade de mesas</label><input id="mesa-qtd" type="number" min="1" max="40" value="12"></div>
+        <button type="submit" class="botao">Gerar QR Codes</button>
+        <button type="button" class="botao secundario" id="imprimir-mesas">🖨 Imprimir</button>
+      </form>
+      <p class="ajuda nao-imprimir">Os celulares precisam estar na mesma rede Wi-Fi do computador. Use o endereço IP do computador (ex.: http://192.168.0.10:3000), e não "localhost".</p>
+      <div class="grade-mesas" id="grade-mesas"></div>
     </section>
 
     <section id="aba-equipe" role="tabpanel" class="oculto">
@@ -123,6 +150,15 @@
         <div class="campo"><label for="it-cat">Categoria</label><select id="it-cat" name="categoria_id"></select></div>
         <div class="campo"><label for="it-preco">Preço (R$)</label><input id="it-preco" name="preco" inputmode="decimal" placeholder="29,90" required></div>
       </div>
+      <div class="campo foto-campo">
+        <label for="it-foto">Foto do prato <span class="suave">(opcional)</span></label>
+        <div class="linha">
+          <img id="it-previa" class="foto-previa oculto" alt="Prévia da foto">
+          <input type="file" id="it-foto" accept="image/*" style="flex:1">
+          <button type="button" class="botao neutro pequeno oculto" id="it-remover-foto">Remover foto</button>
+        </div>
+        <p class="ajuda">A foto é reduzida automaticamente antes do envio.</p>
+      </div>
       <label class="caixa-checagem"><input type="checkbox" id="it-disp" name="disponivel" checked><span>Disponível no cardápio</span></label>
       <label class="caixa-checagem"><input type="checkbox" id="it-dest" name="destaque"><span>Destacar como "Mais pedido"</span></label>
       <p></p>
@@ -132,6 +168,7 @@
 
   <script src="/js/api.js"></script>
   <script src="/js/layout.js"></script>
+  <script src="/js/qrcode.js"></script>
   <script src="/js/gestao.js"></script>
 </body>
 </html>

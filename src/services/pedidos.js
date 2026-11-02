@@ -7,6 +7,7 @@ const regras = require('./regras');
 const enderecos = require('./enderecos');
 const auditoria = require('./auditoria');
 const { barramento, publicar } = require('./eventos');
+const fotos = require('./fotos');
 
 const MODALIDADES = ['entrega', 'retirada', 'salao'];
 const FORMAS_PAGAMENTO = ['credito', 'debito', 'pix', 'dinheiro'];
@@ -40,7 +41,7 @@ function cardapio({ incluirIndisponiveis = false } = {}) {
   const itens = todos(`SELECT * FROM itens ${incluirIndisponiveis ? '' : 'WHERE disponivel = 1'} ORDER BY nome`);
   return categorias.map((c) => ({
     ...c,
-    itens: itens.filter((i) => i.categoria_id === c.id).map((i) => ({ ...i, disponivel: !!i.disponivel, destaque: !!i.destaque })),
+    itens: itens.filter((i) => i.categoria_id === c.id).map((i) => ({ ...i, disponivel: !!i.disponivel, destaque: !!i.destaque, foto: fotos.urlDaFoto(i.id) })),
   })).filter((c) => c.itens.length || incluirIndisponiveis);
 }
 
@@ -172,6 +173,7 @@ function obter(idOuCodigo) {
   p.pagamento = um('SELECT * FROM pagamentos WHERE pedido_id = ?', p.id);
   p.entregador = p.entregador_id ? um('SELECT id, nome, telefone, veiculo, empresa FROM entregadores WHERE id = ?', p.entregador_id) : null;
   p.ocorrencias = todos('SELECT * FROM ocorrencias WHERE pedido_id = ? ORDER BY id', p.id);
+  p.avaliacao = um('SELECT nota, comentario, criado_em FROM avaliacoes WHERE pedido_id = ?', p.id);
   return p;
 }
 

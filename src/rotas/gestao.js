@@ -1,4 +1,6 @@
 // Painel do gerente (proprietários): visão geral, cardápio, equipe, configurações, auditoria, e-mails e backup
+const os = require('node:os');
+const config = require('../config');
 const { um, todos, executar } = require('../db/database');
 const { HttpError } = require('../lib/erros');
 const { exigirPerfil } = require('../lib/sessao');
@@ -9,6 +11,7 @@ const regras = require('../services/regras');
 const sla = require('../services/sla');
 const backup = require('../services/backup');
 const auditoria = require('../services/auditoria');
+const fotos = require('../services/fotos');
 const { relatorio } = require('./financeiro');
 
 const exigirGerente = exigirPerfil(); // sem perfis listados: somente o gerente
@@ -56,6 +59,7 @@ module.exports = (app) => {
       sla: { cumpridos: slaSemana.resumo.cumpridos, descumpridos: slaSemana.resumo.descumpridos, indicadores: slaSemana.indicadores },
       maisVendidos,
       clientes: um("SELECT COUNT(*) AS n FROM usuarios WHERE perfil = 'cliente' AND ativo = 1").n,
+      satisfacao: um('SELECT ROUND(AVG(nota), 1) AS media, COUNT(*) AS total FROM avaliacoes WHERE criado_em >= ?', inicioDiaUTC(dataLocal(new Date(Date.now() - 29 * 86400000)))),
       backups: backup.listar().slice(0, 1),
     };
   });
@@ -89,6 +93,36 @@ module.exports = (app) => {
     if (!alterados) throw new HttpError(404, 'Item não encontrado');
     auditoria.registrar(ctx, ctx.body.disponivel ? 'item_disponivel' : 'item_indisponivel', { entidade: 'item', id: ctx.params.id });
     return { ok: true };
+  });
+
+  // Foto do prato (o navegador reduz a imagem e envia em JPEG)
+  app.post('/api/gestao/itens/:id/foto', exigirGerente, (ctx) => {
+    if (!um('SELECT id FROM itens WHERE id = ?', Number(ctx.params.id))) throw new HttpError(404, 'Item não encontrado');
+    const url = fotos.salvar(ctx.params.id, ctx.body.imagem);
+    auditoria.registrar(ctx, 'item_foto_alterada', { entidade: 'item', id: ctx.params.id });
+    return { foto: url };
+  });
+  app.delete('/api/gestao/itens/:id/foto', exigirGerente, (ctx) => {
+    fotos.remover(ctx.params.id);
+    auditoria.registrar(ctx, 'item_foto_removida', { entidade: 'item', id: ctx.params.id });
+    return { ok: true };
+  });
+
+  // ---- Avaliações dos clientes (satisfação) ----
+  app.get('/api/gestao/avaliacoes', exigirGerente, (ctx) => {
+    const dias = Math.min(Math.max(Number(ctx.query.dias) || 30, 1), 365);
+    const desde = inicioDiaUTC(dataLocal(new Date(Date.now() - (dias - 1) * 86400000)));
+    const resumo = um('SELECT ROUND(AVG(nota), 2) AS media, COUNT(*) AS total FROM avaliacoes WHERE criado_em >= ?', desde);
+    const distribuicao = Object.fromEntries([5, 4, 3, 2, 1].map((n) => [n, 0]));
+    todos('SELECT nota, COUNT(*) AS n FROM avaliacoes WHERE criado_em >= ? GROUP BY nota', desde).forEach((r) => { distribuicao[r.nota] = r.n; });
+    // Satisfação x pontualidade: compara a nota das entregas no prazo com as atrasadas (SLA de 40 min)
+    const porPrazo = todos(`SELECT CASE WHEN (julianday(p.entregue_em) - julianday(p.pronto_em)) * 1440 <= 40 THEN 'no_prazo' ELSE 'atrasado' END AS prazo,
+                              ROUND(AVG(a.nota), 2) AS media, COUNT(*) AS total
+                            FROM avaliacoes a JOIN pedidos p ON p.id = a.pedido_id
+                            WHERE a.criado_em >= ? AND p.modalidade = 'entrega' GROUP BY prazo`, desde);
+    const ultimas = todos(`SELECT a.nota, a.comentario, a.criado_em, p.codigo, p.cliente_nome, p.modalidade
+                           FROM avaliacoes a JOIN pedidos p ON p.id = a.pedido_id WHERE a.criado_em >= ? ORDER BY a.id DESC LIMIT 30`, desde);
+    return { dias, ...resumo, distribuicao, porPrazo, ultimas };
   });
 
   // Regra de domínio 4: tempo médio de preparo por categoria
@@ -173,6 +207,14 @@ module.exports = (app) => {
     if (q.fim) { filtros.push('criado_em < ?'); params.push(fimDiaUTC(q.fim)); }
     const limite = Math.min(Number(q.limite) || 200, 1000);
     return todos(`SELECT * FROM auditoria ${filtros.length ? `WHERE ${filtros.join(' AND ')}` : ''} ORDER BY id DESC LIMIT ?`, ...params, limite);
+  });
+
+  // ---- Endereço do sistema na rede local (para os QR Codes das mesas abrirem no celular) ----
+  app.get('/api/gestao/rede', exigirGerente, (ctx) => {
+    const ips = Object.values(os.networkInterfaces()).flat()
+      .filter((i) => i && i.family === 'IPv4' && !i.internal).map((i) => i.address);
+    const porta = (ctx.req.headers.host || '').split(':')[1] || config.porta;
+    return { enderecos: ips.map((ip) => `http://${ip}:${porta}`), atual: `http://${ctx.req.headers.host}` };
   });
 
   // ---- Caixa de saída de e-mails (envio simulado) ----

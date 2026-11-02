@@ -8,6 +8,7 @@ const { tokenAleatorio } = require('../lib/seguranca');
 const pedidos = require('../services/pedidos');
 const regras = require('../services/regras');
 const sla = require('../services/sla');
+const rastreamento = require('../services/rastreamento');
 const auditoria = require('../services/auditoria');
 const notificacoes = require('../services/notificacoes');
 const { publicar } = require('../services/eventos');
@@ -89,6 +90,8 @@ module.exports = (app) => {
   app.post('/api/logistica/pedidos/:codigo/devolver', exigirLogistica, (ctx) =>
     pedidos.mudarStatus(ctx, ctx.params.codigo, 'pronto', { observacao: 'Entregador recusou/não respondeu — voltou para a fila de despacho' }));
 
+    // Acompanhamento dos entregadores no mapa, com previsão de chegada (RF13 e RF14)
+  app.get('/api/logistica/rastreamento', exigirLogistica, () => rastreamento.painel());
   // RF14 — Estimativa de entrega com base no endereço (bairro → distância → tempo)
   app.get('/api/logistica/estimativa/:bairroId', exigirLogistica, (ctx) => {
     const b = regras.bairroPorId(ctx.params.bairroId);
@@ -154,7 +157,7 @@ module.exports = (app) => {
     // A integração age como um usuário técnico do perfil logística
     const ctxIntegracao = { ...ctx, usuario: { id: null, nome: 'Integração RotaLog', perfil: 'logistica', equipe: true } };
     const pedido = pedidos.obter(texto(ctx.body.pedido, 'pedido', { max: 20 }));
-    const evento = opcao(ctx.body.evento, 'evento', ['aceito', 'entregue', 'ocorrencia']);
+    const evento = opcao(ctx.body.evento, 'evento', ['aceito', 'posicao', 'entregue', 'ocorrencia']);
 
     if (evento === 'aceito') {
       if (pedido.status === 'pronto') {
@@ -163,6 +166,12 @@ module.exports = (app) => {
       }
       return pedidos.mudarStatus(ctxIntegracao, pedido.id, 'a_caminho', { observacao: 'Recebido da RotaLog' });
     }
+    if (evento === 'posicao') {
+      const fracao = rastreamento.registrarPosicao(pedido, ctx.body);
+      publicar('rastreamento', { codigo: pedido.codigo, progresso: fracao }, { perfis: ['logistica'] });
+      return { codigo: pedido.codigo, status: pedido.status, progresso: Math.round(fracao * 100) };
+    }
+
     if (evento === 'entregue') return pedidos.mudarStatus(ctxIntegracao, pedido.id, 'entregue', { observacao: 'Recebido da RotaLog' });
     return registrarOcorrencia(ctxIntegracao, pedido, { tipo: ctx.body.tipo, descricao: ctx.body.descricao, origem: 'rotalog' });
   });

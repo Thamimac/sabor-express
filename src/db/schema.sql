@@ -217,3 +217,22 @@ CREATE TABLE IF NOT EXISTS configuracoes (
   chave  TEXT PRIMARY KEY,
   valor  TEXT NOT NULL
 );
+
+
+CREATE TABLE IF NOT EXISTS rastreamento (          -- posição do entregador enviada pela RotaLog
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  pedido_id    INTEGER NOT NULL REFERENCES pedidos(id) ON DELETE CASCADE,
+  progresso    REAL NOT NULL,     -- 0 a 1 (fração do trajeto percorrida)
+  origem       TEXT NOT NULL DEFAULT 'rotalog',
+  em           TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_rastreamento_pedido ON rastreamento(pedido_id, id);
+
+CREATE TABLE IF NOT EXISTS avaliacoes (            -- satisfação do cliente após a entrega
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  pedido_id    INTEGER NOT NULL UNIQUE REFERENCES pedidos(id) ON DELETE CASCADE,
+  cliente_id   INTEGER REFERENCES usuarios(id),
+  nota         INTEGER NOT NULL CHECK (nota BETWEEN 1 AND 5),
+  comentario   TEXT,
+  criado_em    TEXT NOT NULL
+);
