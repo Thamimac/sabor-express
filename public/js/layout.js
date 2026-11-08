@@ -34,8 +34,7 @@ function desenharTopo() {
   const atual = location.pathname.replace(/\.html$/, '');
   el.innerHTML = `
     <div class="container">
-      <a class="marca" href="/">Sabor <span>Express</span></a>
-      <nav class="menu" aria-label="Menu principal">
+      <a class="marca" href="/"><img src="/img/logo.svg" alt="Sabor Express" width="112" height="54"></a>      <nav class="menu" aria-label="Menu principal">
         ${links.map(([href, rotulo]) => `<a href="${href}" class="${atual === href ? 'ativo' : ''}">${rotulo}</a>`).join('')}
         ${u ? `<div class="sino-area">
                  <button type="button" class="sino" id="sino" aria-label="Notificações" aria-expanded="false">🔔<span class="contador-sino oculto" id="contador-sino"></span></button>

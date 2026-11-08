@@ -5,37 +5,86 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sabor Express — Restaurante no centro de São Paulo</title>
   <meta name="description" content="Restaurante Sabor Express: comida caseira com entrega, retirada no balcão e salão, no centro de São Paulo.">
+  <link rel="icon" href="/img/logo.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/estilo.css">
 </head>
 <body>
   <header class="topo" id="topo"></header>
 
   <main>
-    <!-- Apresentação -->
-    <section class="capa">
-      <div class="container capa-grade">
-        <div>
-          <p class="sobretitulo">Desde 2016 no centro de São Paulo</p>
-          <h1>Comida caseira, feita na hora e entregue com agilidade.</h1>
-          <p class="capa-texto">Do almoço executivo ao jantar à la carte: peça pelo site, retire no balcão ou venha ao nosso salão.
-            Você acompanha cada etapa do seu pedido, da cozinha até a sua porta.</p>
-          <div class="linha">
-            <a class="botao grande" href="/cardapio">Ver cardápio e pedir</a>
-            <a class="botao secundario grande" href="#historia">Conheça a casa</a>
+    <!-- Banner rotativo com fotos grandes (as fotos ficam em public/img) -->
+    <section class="banner" aria-roledescription="carrossel" aria-label="Destaques">
+      <div class="slide ativo" aria-roledescription="slide" aria-label="1 de 3">
+        <img class="foto-fundo" src="/img/banner-1.jpg" alt="">
+        <div class="container slide-texto">
+          <h1>Comida caseira no centro de São Paulo</h1>
+          <p>Almoço executivo, pratos à la carte e a feijoada da casa, feitos na hora desde 2016.</p>
+          <a class="botao grande" href="/cardapio">Ver o cardápio</a>
+        </div>
+      </div>
+      <div class="slide" aria-roledescription="slide" aria-label="2 de 3">
+        <img class="foto-fundo" src="/img/banner-2.jpg" alt="">
+        <div class="container slide-texto">
+          <h2>Um salão para o seu almoço</h2>
+          <p>Aponte a câmera do celular para o QR Code da mesa e faça o pedido sem esperar.</p>
+          <a class="botao grande claro" href="#visite">Como chegar</a>
+        </div>
+      </div>
+      <div class="slide" aria-roledescription="slide" aria-label="3 de 3">
+        <img class="foto-fundo" src="/img/banner-3.jpg" alt="">
+        <div class="container slide-texto">
+          <h2>Entregamos em até 8 km</h2>
+          <p>Acompanhe o seu pedido pelo site, da cozinha até a sua porta.</p>
+          <a class="botao grande" href="#entrega">Consultar a taxa</a>
+        </div>
+      </div>
+      <button type="button" class="banner-seta anterior" aria-label="Destaque anterior">‹</button>
+      <button type="button" class="banner-seta proximo" aria-label="Próximo destaque">›</button>
+      <div class="banner-pontos" role="group" aria-label="Escolher destaque"></div>
+    </section>
+
+    <div class="faixa-status">
+      <div class="container">
+        <p id="situacao" aria-live="polite">Carregando…</p>
+        <a href="/cardapio">Fazer um pedido</a>
+      </div>
+    </div>
+
+    <!-- Atalhos: delivery e salão -->
+    <section class="secao">
+      <div class="container atalhos">
+        <a class="atalho" href="/cardapio">
+          <img class="foto-fundo" src="/img/delivery.jpg" alt="">
+          <div class="atalho-texto">
+            <h2>Peça em casa</h2>
+            <p>Entrega, retirada no balcão ou pedido na mesa. Pague por Pix ou cartão pelo site.</p>
+            <span class="botao claro">Fazer meu pedido</span>
           </div>
-          <div id="situacao" class="linha" style="margin-top:1.25rem" aria-live="polite"><span class="selo">Carregando…</span></div>
-        </div>
-        <div class="capa-numeros">
-          <div><strong>2016</strong><span>ano de fundação</span></div>
-          <div><strong>8 km</strong><span>de raio de entrega</span></div>
-          <div><strong>3</strong><span>jeitos de pedir: entrega, retirada e salão</span></div>
-          <div><strong>11h–23h</strong><span>todos os dias</span></div>
-        </div>
+        </a>
+        <a class="atalho" href="#visite">
+          <img class="foto-fundo" src="/img/salao.jpg" alt="">
+          <div class="atalho-texto">
+            <h2>Venha ao salão</h2>
+            <p>Estamos na Sé, abertos todos os dias para o almoço e o jantar.</p>
+            <span class="botao claro">Ver endereço</span>
+          </div>
+        </a>
       </div>
     </section>
 
-    <!-- História (item 3.1.1 da documentação) -->
-    <section class="secao" id="historia">
+    <!-- Pratos da casa (as fotos vêm de Gestão → Cardápio) -->
+    <section class="secao" style="padding-top:0">
+      <div class="container">
+        <div class="cabecalho-secao">
+          <h2>Pratos da casa</h2>
+          <a href="/cardapio">Ver o cardápio completo</a>
+        </div>
+        <div class="pratos" id="pratos"><p class="suave">Carregando…</p></div>
+      </div>
+    </section>
+
+    <!-- História e missão (itens 3.1.1 e 3.1.2 da documentação) -->
+    <section class="secao fundo-creme" id="historia">
       <div class="container historia">
         <div>
           <h2>Nossa história</h2>
@@ -43,86 +92,73 @@
             de São Paulo. No começo eram só o salão e os pedidos por telefone, anotados à mão pela nossa equipe.</p>
           <p>A partir de 2020, com o crescimento das entregas, passamos a atender também em casa. Para cuidar melhor de cada pedido,
             sem erros de anotação e com prazo de entrega confiável, criamos o nosso próprio sistema de pedidos e delivery.</p>
-          <p>Hoje atendemos no salão, na retirada no balcão e com entrega em até 8 km, sempre com o mesmo cuidado de sempre.</p>
+          <p>Hoje atendemos no salão, na retirada no balcão e com entrega em até 8 km, com o mesmo cuidado do primeiro dia.</p>
         </div>
-        <blockquote class="missao">
-          <span class="sobretitulo">Nossa missão</span>
-          “Oferecer refeições saborosas e de qualidade, com agilidade, praticidade e transparência, e proporcionar uma experiência
-          simples, rápida e confiável, do pedido à entrega.”
-        </blockquote>
+        <figure class="missao">
+          <blockquote>“Oferecer refeições saborosas e de qualidade, com agilidade, praticidade e transparência, do pedido à entrega.”</blockquote>
+          <figcaption>Nossa missão</figcaption>
+        </figure>
       </div>
     </section>
 
-    <!-- Valores (item 3.1.4) -->
-    <section class="secao fundo-suave">
-      <div class="container">
-        <h2>No que acreditamos</h2>
-        <div class="valores">
-          <div><span aria-hidden="true">🤝</span><h3>Ética e respeito</h3><p class="suave">Com clientes, colaboradores e parceiros.</p></div>
-          <div><span aria-hidden="true">🔎</span><h3>Transparência</h3><p class="suave">Você vê o status e a previsão do seu pedido o tempo todo.</p></div>
-          <div><span aria-hidden="true">✅</span><h3>Responsabilidade</h3><p class="suave">Qualidade no preparo e cuidado com os seus dados.</p></div>
-          <div><span aria-hidden="true">🌱</span><h3>Melhoria contínua</h3><p class="suave">Ouvimos as suas avaliações para melhorar sempre.</p></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Como funciona -->
+    <!-- Como pedir (é uma sequência de passos) -->
     <section class="secao">
       <div class="container">
-        <h2>Como funciona</h2>
+        <h2>Como pedir pelo site</h2>
         <ol class="passos">
-          <li><span>1</span><h3>Escolha no cardápio</h3><p class="suave">Monte o pedido e deixe observações, como "sem cebola".</p></li>
-          <li><span>2</span><h3>Pague como preferir</h3><p class="suave">Pix, cartão pelo site ou dinheiro na entrega.</p></li>
-          <li><span>3</span><h3>Acompanhe em tempo real</h3><p class="suave">Confirmado, em preparo, pronto, a caminho: tudo na tela.</p></li>
-          <li><span>4</span><h3>Receba e avalie</h3><p class="suave">Sua nota nos ajuda a melhorar cada entrega.</p></li>
+          <li><h3>Escolha os pratos</h3><p>Monte o pedido no cardápio e deixe observações, como "sem cebola".</p></li>
+          <li><h3>Pague como preferir</h3><p>Pix ou cartão pelo site, ou dinheiro e cartão na entrega.</p></li>
+          <li><h3>Acompanhe</h3><p>Você vê quando o pedido é confirmado, começa a ser preparado e sai para entrega.</p></li>
+          <li><h3>Receba e avalie</h3><p>Sua nota ajuda a gente a melhorar cada entrega.</p></li>
         </ol>
       </div>
     </section>
 
-    <!-- Modalidades e taxa -->
-    <section class="secao fundo-suave">
-      <div class="container destaque-grade">
-        <div>
-          <h2>Peça do seu jeito</h2>
-          <div class="pilha">
-            <div class="cartao modalidade"><span class="icone" aria-hidden="true">🛵</span>
-              <div><h3>Entrega</h3><p class="suave">Até 8 km do restaurante, com taxa por distância.</p></div></div>
-            <div class="cartao modalidade"><span class="icone" aria-hidden="true">🥡</span>
-              <div><h3>Retirada no balcão</h3><p class="suave">Sem taxa. Avisamos quando estiver pronto.</p></div></div>
-            <div class="cartao modalidade"><span class="icone" aria-hidden="true">🍽️</span>
-              <div><h3>Consumo no salão</h3><p class="suave">Aponte o celular para o QR Code da mesa e peça sem esperar.</p></div></div>
-          </div>
-        </div>
-        <div class="cartao painel-status">
-          <h3>Consulte a taxa de entrega</h3>
-          <label for="bairro">Seu bairro</label>
-          <select id="bairro"><option value="">Selecione…</option></select>
-          <div id="resultado-taxa" class="mensagem info oculto" aria-live="polite"></div>
-          <table class="tabela-taxas">
-            <thead><tr><th>Distância</th><th class="num">Taxa</th></tr></thead>
-            <tbody id="faixas"></tbody>
-          </table>
-        </div>
+    <!-- Valores (item 3.1.4) -->
+    <section class="secao fundo-creme">
+      <div class="container">
+        <h2>No que acreditamos</h2>
+        <dl class="valores">
+          <div><dt>Ética e respeito</dt><dd>Com clientes, colaboradores e parceiros.</dd></div>
+          <div><dt>Transparência</dt><dd>Você vê o status e a previsão do seu pedido o tempo todo.</dd></div>
+          <div><dt>Responsabilidade</dt><dd>Qualidade no preparo e cuidado com os seus dados.</dd></div>
+          <div><dt>Melhoria contínua</dt><dd>Lemos cada avaliação para melhorar o que fazemos.</dd></div>
+        </dl>
       </div>
     </section>
 
-    <!-- Onde estamos -->
-    <section class="secao">
-      <div class="container visite">
+    <!-- Taxa de entrega e endereço -->
+    <section class="secao" id="entrega">
+      <div class="container entrega-grade">
         <div>
-          <h2>Venha nos visitar</h2>
-          <p><strong id="endereco">Centro de São Paulo</strong></p>
-          <p>Aberto todos os dias, das <strong id="horario">11h às 23h</strong>.<br>Telefone: <strong id="telefone"></strong></p>
+          <h2>Taxa de entrega</h2>
+          <label for="bairro">Escolha o seu bairro</label>
+          <select id="bairro"><option value="">Selecione…</option></select>
+          <div id="resultado-taxa" class="mensagem info oculto" aria-live="polite"></div>
+          <table class="tabela-taxas">
+            <thead><tr><th>Distância do restaurante</th><th class="num">Taxa</th></tr></thead>
+            <tbody id="faixas"></tbody>
+          </table>
         </div>
-        <a class="botao grande" href="/cardapio">Bateu a fome? Ver cardápio</a>
+        <div class="endereco" id="visite">
+          <h2>Onde estamos</h2>
+          <p id="endereco">Centro de São Paulo</p>
+          <p>Aberto todos os dias, das <span id="horario">11h às 23h</span>.</p>
+          <p>Telefone: <span id="telefone"></span></p>
+          <a class="botao" href="/cardapio">Fazer um pedido</a>
+        </div>
       </div>
     </section>
   </main>
 
   <footer class="rodape">
-    <div class="container linha entre">
-      <span id="rodape-endereco">Sabor Express</span>
-      <span><a href="/privacidade">Política de Privacidade</a> · Sistema desenvolvido para a disciplina de Laboratório de Engenharia de Software — FATEC SP</span>
+    <div class="container rodape-grade">
+      <div>
+        <img class="rodape-logo" src="/img/logo-branco.svg" alt="Sabor Express">
+        <p id="rodape-endereco"></p>
+      </div>
+      <p><a href="/cardapio">Cardápio</a><br><a href="/conta">Minha conta</a><br><a href="/privacidade">Política de privacidade</a></p>
+      <p>Sistema desenvolvido para a disciplina de<br>Laboratório de Engenharia de Software, FATEC SP.</p>
     </div>
   </footer>
 
