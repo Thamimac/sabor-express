@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS pedidos (
   subtotal_centavos    INTEGER NOT NULL,
   taxa_entrega_centavos INTEGER NOT NULL DEFAULT 0,
   total_centavos       INTEGER NOT NULL,
-  forma_pagamento      TEXT NOT NULL CHECK (forma_pagamento IN ('credito','debito','pix','dinheiro')),
+  forma_pagamento      TEXT NOT NULL CHECK (forma_pagamento IN ('credito','debito','pix','dinheiro', 'voucher')),
   troco_para_centavos  INTEGER,
   status               TEXT NOT NULL DEFAULT 'aguardando_confirmacao'
                        CHECK (status IN ('aguardando_confirmacao','recebido','em_preparo','pronto',
@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS historico_status (
 CREATE TABLE IF NOT EXISTS pagamentos (
   id               INTEGER PRIMARY KEY AUTOINCREMENT,
   pedido_id        INTEGER NOT NULL UNIQUE REFERENCES pedidos(id) ON DELETE CASCADE,
-  forma            TEXT NOT NULL CHECK (forma IN ('credito','debito','pix','dinheiro')),
+  forma            TEXT NOT NULL CHECK (forma IN ('credito','debito','pix','dinheiro', 'voucher')),
   valor_centavos   INTEGER NOT NULL,
   status           TEXT NOT NULL DEFAULT 'pendente'
                    CHECK (status IN ('pendente','aprovado','recusado','estornado','cancelado')),

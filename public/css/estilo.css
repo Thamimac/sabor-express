@@ -49,6 +49,12 @@ img { max-width: 100%; }
 .pilha > * + * { margin-top: 1rem; }
 .grade { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
 
+/* Acessibilidade: texto só para leitor de tela e atalho "Pular para o conteúdo" */
+.leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.pular { position: absolute; left: 1rem; top: -100px; z-index: 200; background: var(--vinho); color: #fff; padding: .6rem 1rem; border-radius: var(--raio); font-weight: 700; }
+.pular:focus { top: .5rem; }
+main:focus { outline: none; }
+
 /* ---- Cabeçalho: branco, com o logo à esquerda ---- */
 .topo { background: #fff; position: sticky; top: 0; z-index: 20; box-shadow: 0 1px 0 var(--cor-borda), 0 4px 14px rgba(43, 27, 23, .06); }
 .topo .container { display: flex; align-items: center; gap: 1rem; min-height: 72px; flex-wrap: wrap; }
@@ -91,7 +97,7 @@ body.painel .menu a[href="/cardapio"]:not(.ativo) { background: none; color: var
 
 /* ---- Formulários ---- */
 label { display: block; font-weight: 600; margin-bottom: .3rem; font-size: .95rem; }
-input, select, textarea { width: 100%; font: inherit; padding: .6rem .75rem; border: 1px solid #d9c9b4; border-radius: var(--raio); background: #fff; color: inherit; min-height: 44px; }
+input, select, textarea { width: 100%; font: inherit; padding: .6rem .75rem; border: 1px solid #9a8676; border-radius: var(--raio); background: #fff; color: inherit; min-height: 44px; }
 input:focus, select:focus, textarea:focus { border-color: var(--vermelho); outline: none; box-shadow: 0 0 0 3px rgba(165, 31, 28, .15); }
 input[type='checkbox'], input[type='radio'] { width: auto; min-height: auto; accent-color: var(--vermelho); }
 .campo { margin-bottom: 1rem; }
@@ -362,8 +368,12 @@ tfoot th { background: #f6ecdc; text-transform: none; font-size: .95rem; color: 
 .banner-seta:hover { background: rgba(255, 255, 255, .32); }
 .banner-seta.anterior { left: 1rem; } .banner-seta.proximo { right: 1rem; }
 .banner-pontos { position: absolute; bottom: 1.25rem; left: 50%; transform: translateX(-50%); z-index: 2; display: flex; gap: .5rem; }
-.banner-pontos button { width: 34px; height: 5px; border-radius: 3px; border: 0; padding: 0; background: rgba(255, 255, 255, .45); cursor: pointer; }
-.banner-pontos button[aria-current='true'] { background: #fff; }
+.banner-pontos button { width: 44px; height: 24px; border: 0; padding: 0; background: none; cursor: pointer; display: grid; place-items: center; }
+.banner-pontos button::before { content: ''; width: 34px; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, .45); }
+.banner-pontos button[aria-current='true']::before { background: #fff; }
+.banner-pausa { position: absolute; right: 1rem; bottom: 1rem; z-index: 2; border: 1px solid rgba(255, 255, 255, .5); background: rgba(0, 0, 0, .25);
+  color: #fff; border-radius: 999px; padding: .3rem .9rem; min-height: 36px; font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; }
+.banner-pausa:hover { background: rgba(0, 0, 0, .45); }
 
 /* Situação do restaurante logo abaixo do banner */
 .faixa-status { background: var(--creme); border-bottom: 1px solid var(--cor-borda); }
@@ -452,9 +462,9 @@ tfoot th { background: #f6ecdc; text-transform: none; font-size: .95rem; color: 
 .estrelas { border: 0; padding: 0; margin: 0 0 1rem; display: inline-flex; flex-direction: row-reverse; gap: .2rem; }
 .estrelas input { position: absolute; opacity: 0; }
 .estrelas label { font-size: 2.2rem; color: #d9c9b4; cursor: pointer; margin: 0; line-height: 1; }
-.estrelas label:hover, .estrelas label:hover ~ label, .estrelas input:checked ~ label { color: #e0a313; }
+.estrelas label:hover, .estrelas label:hover ~ label, .estrelas input:checked ~ label { color: #b7790c; }
 .estrelas input:focus-visible + label { outline: 3px solid #e0a33b; border-radius: 4px; }
-.estrelas-fixas { color: #e0a313; letter-spacing: .1em; font-size: 1.1rem; }
+.estrelas-fixas { color: #b7790c; letter-spacing: .1em; font-size: 1.1rem; }
 
 /* ---- QR Code das mesas ---- */
 .grade-mesas { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }

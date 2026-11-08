@@ -21,15 +21,24 @@
   $('.banner-seta.proximo').addEventListener('click', () => mostrar(atual + 1));
   $$('button', pontos).forEach((b, i) => b.addEventListener('click', () => mostrar(i)));
   mostrar(0);
-  const semAnimacao = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let pausado = false;
+    const semAnimacao = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let pausado = false;      // mouse ou teclado em cima do banner
+  let parado = semAnimacao; // a pessoa clicou em "Pausar" (ou pediu menos animação no sistema)
+  const botaoPausa = $('.banner-pausa');
+  function atualizarPausa() {
+    botaoPausa.textContent = parado ? 'Continuar' : 'Pausar';
+    botaoPausa.setAttribute('aria-pressed', String(parado));
+    botaoPausa.setAttribute('aria-label', parado ? 'Continuar a troca automática dos destaques' : 'Pausar a troca automática dos destaques');
+  }
+  botaoPausa.addEventListener('click', () => { parado = !parado; atualizarPausa(); });
+  atualizarPausa();
   $('.banner').addEventListener('mouseenter', () => { pausado = true; });
   $('.banner').addEventListener('mouseleave', () => { pausado = false; });
   $('.banner').addEventListener('focusin', () => { pausado = true; });
   $('.banner').addEventListener('focusout', () => { pausado = false; });
-  if (!semAnimacao) setInterval(() => { if (!pausado && !document.hidden) mostrar(atual + 1); }, 6000);
-
+  setInterval(() => { if (!pausado && !parado && !document.hidden) mostrar(atual + 1); }, 6000);
   // ---- Pratos da casa: primeiro os que têm foto e os mais pedidos (até 6) ----
+  
   api.get('/api/cardapio').then(({ categorias }) => {
     const todos = categorias.flatMap((c) => c.itens);
     const pontos = (i) => (i.foto ? 2 : 0) + (i.destaque ? 1 : 0);

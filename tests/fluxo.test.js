@@ -303,4 +303,17 @@ describe('Melhorias — avaliação, fotos, rastreamento e QR Code', () => {
     const r = await u.gerente.get('/api/gestao/rede');
     assert.ok(Array.isArray(r.dados.enderecos));
   });
+
+    test('RF16: pagamento com vale-refeição (voucher) exige a bandeira e aparece no recibo', async () => {
+    const p = await novoPedido({ ...pedidoEntrega, forma_pagamento: 'voucher' });
+    assert.equal(p.forma_pagamento, 'voucher');
+    const vale = { forma: 'voucher', nome: 'MARIA CLIENTE', validade: '12/30', cvv: '123', numero: '4111111111111111' };
+    assert.equal((await u.cliente.post(`/api/pedidos/${p.codigo}/pagar/cartao`, { ...vale, bandeira: 'Desconhecida' })).status, 422, 'bandeira não aceita');
+    const ok = await u.cliente.post(`/api/pedidos/${p.codigo}/pagar/cartao`, { ...vale, bandeira: 'Alelo' });
+    assert.equal(ok.dados.status, 'aprovado');
+    assert.equal(ok.dados.forma, 'voucher');
+    assert.equal(ok.dados.cartao_bandeira, 'Alelo');
+    const recibo = await u.cliente.get(`/api/pedidos/${p.codigo}/recibo`);
+    assert.equal(recibo.dados.pagamento.cartao, 'Alelo final 1111');
+  });
 });

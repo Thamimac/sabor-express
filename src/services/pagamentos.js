@@ -43,6 +43,9 @@ function validarCartao(dados = {}) {
   return { numero, nome };
 }
 
+// Vale-refeição (voucher): bandeiras aceitas pelo restaurante
+const BANDEIRAS_VOUCHER = ['Alelo', 'Pluxee', 'Ticket', 'VR'];
+
 // Gateway simulado: cartões terminados em 0002 são recusados (para demonstrar o RF19)
 function gatewaySimulado(numero) {
   if (numero.endsWith('0002')) return { aprovado: false, motivo: 'Transação recusada pela operadora (saldo ou limite insuficiente)' };
@@ -86,22 +89,24 @@ function aprovar(ctx, pedido, pg, campos) {
   return um('SELECT * FROM pagamentos WHERE id = ?', pg.id);
 }
 
-// RF16 — Cartão de crédito ou débito (pago pelo cliente no site)
+// RF16 — Cartão de crédito, débito ou vale-refeição (pago pelo cliente no site)
 function pagarComCartao(ctx, pedido, dados) {
   const pg = doPedido(pedido);
   exigirPagavel(pedido, pg);
-  const forma = opcao(dados.forma || pg.forma, 'forma de pagamento', ['credito', 'debito']);
+  const forma = opcao(dados.forma || pg.forma, 'forma de pagamento', ['credito', 'debito', 'voucher']);
   const { numero } = validarCartao(dados);
+  // No vale-refeição a bandeira é escolhida pelo cliente (Alelo, Pluxee, Ticket ou VR)
+  const nomeBandeira = forma === 'voucher' ? opcao(dados.bandeira, 'bandeira do vale-refeição', BANDEIRAS_VOUCHER) : bandeira(numero);
   const resposta = gatewaySimulado(numero);
   const final = numero.slice(-4); // só os 4 últimos dígitos são guardados
   if (!resposta.aprovado) {
     executar(`UPDATE pagamentos SET status = 'recusado', motivo = ?, forma = ?, cartao_final = ?, cartao_bandeira = ?,
-              tentativas = tentativas + 1, atualizado_em = ? WHERE id = ?`, resposta.motivo, forma, final, bandeira(numero), agoraISO(), pg.id);
+              tentativas = tentativas + 1, atualizado_em = ? WHERE id = ?`, resposta.motivo, forma, final, nomeBandeira, agoraISO(), pg.id);
     auditoria.registrar(ctx, 'pagamento_recusado', { entidade: 'pedido', id: pedido.codigo, detalhes: { forma, final } });
     publicar('pagamento', { codigo: pedido.codigo, status: 'recusado' }, { perfis: ['financeiro'] }); // o cliente vê o erro na própria tela
     throw new HttpError(402, resposta.motivo);
   }
-  return aprovar(ctx, pedido, pg, { forma, referencia: resposta.referencia, final, bandeira: bandeira(numero), tentativa: true });
+  return aprovar(ctx, pedido, pg, { forma, referencia: resposta.referencia, final, bandeira: nomeBandeira, tentativa: true });
 }
 
 // RF16 — Pix: gera o código "copia e cola" (simulado)
@@ -130,7 +135,7 @@ function confirmarPix(ctx, pedido) {
 function receberPresencial(ctx, pedido, forma) {
   const pg = doPedido(pedido);
   exigirPagavel(pedido, pg);
-  const f = opcao(forma || pg.forma, 'forma de pagamento', ['credito', 'debito', 'pix', 'dinheiro']);
+  const f = opcao(forma || pg.forma, 'forma de pagamento', ['credito', 'debito', 'pix', 'dinheiro', 'voucher']);
   return aprovar(ctx, pedido, pg, { forma: f, referencia: `PRESENCIAL-${tokenAleatorio(4).toUpperCase()}` });
 }
 
@@ -179,4 +184,4 @@ function recibo(pedido) {
   };
 }
 
-module.exports = { validarCartao, luhnValido, pagarComCartao, gerarPix, confirmarPix, receberPresencial, estornar, recibo };
+module.exports = { BANDEIRAS_VOUCHER, validarCartao, luhnValido, pagarComCartao, gerarPix, confirmarPix, receberPresencial, estornar, recibo };

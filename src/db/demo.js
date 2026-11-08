@@ -55,7 +55,7 @@ function criarPedido(criadoEm, etapa, opcoes = {}) {
   const end = modalidade === 'entrega' ? enderecoDe(cliente) : null;
   const taxa = end ? regras.taxaEntrega(end.distancia_km) : 0;
   const total = subtotal + taxa;
-  const forma = opcoes.forma || comPeso({ pix: 35, credito: 30, debito: 15, dinheiro: 20 });
+  const forma = opcoes.forma || comPeso({ pix: 32, credito: 27, debito: 13, voucher: 12, dinheiro: 16 });
   const preparoMin = regras.tempoPreparoMin(linhas.map((l) => l.item.tempo_preparo_min));
   const entregaMin = end ? regras.tempoDeslocamentoMin(end.distancia_km) : 0;
 
@@ -98,7 +98,7 @@ function criarPedido(criadoEm, etapa, opcoes = {}) {
   if (etapa === 'cancelado') run('INSERT INTO historico_status (pedido_id, status, usuario_id, em) VALUES (?, ?, ?, ?)', id, 'cancelado', equipe.atendente, mais(t.recebido, 2));
 
   // Pagamento: online é pago na hora do pedido; presencial, na entrega/retirada
-  const online = ['pix', 'credito', 'debito'].includes(forma) && cliente;
+  const online = ['pix', 'credito', 'debito', 'voucher'].includes(forma) && cliente;
   let status = 'pendente';
   let aprovadoEm = null;
   if (online) { status = 'aprovado'; aprovadoEm = mais(criadoEm, 1); }
@@ -106,7 +106,7 @@ function criarPedido(criadoEm, etapa, opcoes = {}) {
   if (etapa === 'cancelado') status = status === 'aprovado' ? 'estornado' : 'cancelado';
   const pgId = run(`INSERT INTO pagamentos (pedido_id, forma, valor_centavos, status, transacao_ref, cartao_final, cartao_bandeira, tentativas, motivo, criado_em, aprovado_em, atualizado_em)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, id, forma, total, status, aprovadoEm ? `GW-DEMO${id}` : null,
-  ['credito', 'debito'].includes(forma) && online ? '1111' : null, ['credito', 'debito'].includes(forma) && online ? 'Visa' : null, online ? 1 : 0,
+  ['credito', 'debito', 'voucher'].includes(forma) && online ? '1111' : null, ['credito', 'debito', 'voucher'].includes(forma) && online ? (forma === 'voucher' ? 'Alelo' : 'Visa') : null, online ? 1 : 0,
   status === 'estornado' ? 'Estorno automático: pedido cancelado' : null, criadoEm, aprovadoEm, aprovadoEm || criadoEm);
 
   // Regra de domínio 7: transação fiscal para todo pagamento aprovado

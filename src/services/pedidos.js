@@ -10,7 +10,7 @@ const { barramento, publicar } = require('./eventos');
 const fotos = require('./fotos');
 
 const MODALIDADES = ['entrega', 'retirada', 'salao'];
-const FORMAS_PAGAMENTO = ['credito', 'debito', 'pix', 'dinheiro'];
+const FORMAS_PAGAMENTO = ['credito', 'debito', 'pix', 'dinheiro', 'voucher'];
 const STATUS_ATIVOS = ['aguardando_confirmacao', 'recebido', 'em_preparo', 'pronto', 'despachado', 'a_caminho'];
 
 // Quem pode mover o pedido de um status para outro ("cliente" = o dono do pedido).

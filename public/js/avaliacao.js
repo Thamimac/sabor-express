@@ -18,7 +18,7 @@ document.addEventListener('pedido-desenhado', (e) => {
       <h3>Como foi o seu pedido?</h3>
       <div class="mensagem oculto" role="alert"></div>
       <fieldset class="estrelas" aria-label="Nota de 1 a 5">
-        ${[5, 4, 3, 2, 1].map((n) => `<input type="radio" id="nota-${n}" name="nota" value="${n}"><label for="nota-${n}" title="${n} de 5">★</label>`).join('')}
+        ${[5, 4, 3, 2, 1].map((n) => `<input type="radio" id="nota-${n}" name="nota" value="${n}"><label for="nota-${n}" title="${n} de 5">★<span class="leitor">${n} de 5 estrelas</span></label>`).join('')}
       </fieldset>
       <div class="campo"><label for="comentario">Comentário <span class="suave">(opcional)</span></label>
         <textarea id="comentario" name="comentario" rows="2" maxlength="300" placeholder="Conte o que achou da comida e da entrega"></textarea></div>

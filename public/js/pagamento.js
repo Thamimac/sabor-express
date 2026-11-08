@@ -28,7 +28,7 @@ document.addEventListener('pedido-desenhado', (e) => {
     ${recusado}
     <div class="abas abas-pequenas" role="tablist">
       <button type="button" role="tab" aria-selected="${usarPix}" data-forma-aba="pix">Pix</button>
-      <button type="button" role="tab" aria-selected="${!usarPix}" data-forma-aba="cartao">Cartão</button>
+      <button type="button" role="tab" aria-selected="${!usarPix}" data-forma-aba="cartao">Cartão ou Vale Refeição</button>
     </div>
     <div id="pg-pix" class="${usarPix ? '' : 'oculto'}">
       ${pg.pix_copia_cola ? `
@@ -41,7 +41,15 @@ document.addEventListener('pedido-desenhado', (e) => {
     </div>
     <form id="pg-cartao" class="${usarPix ? 'oculto' : ''}" novalidate>
       <div class="mensagem oculto" role="alert"></div>
-      <div class="campo"><label for="c-forma">Tipo</label>
+            <div class="campos">
+        <div class="campo"><label for="c-forma">Tipo</label>
+          <select id="c-forma" name="forma"><option value="credito" ${pg.forma === 'credito' ? 'selected' : ''}>Crédito</option>
+            <option value="debito" ${pg.forma === 'debito' ? 'selected' : ''}>Débito</option>
+            <option value="voucher" ${pg.forma === 'voucher' ? 'selected' : ''}>Vale-refeição</option></select></div>
+        <div class="campo ${pg.forma === 'voucher' ? '' : 'oculto'}" id="bloco-bandeira"><label for="c-bandeira">Bandeira do vale</label>
+          <select id="c-bandeira" name="bandeira" ${pg.forma === 'voucher' ? '' : 'disabled'}>
+            ${['Alelo', 'Pluxee', 'Ticket', 'VR'].map((b) => `<option value="${b}">${b}</option>`).join('')}</select></div>
+      </div>
         <select id="c-forma" name="forma"><option value="credito" ${pg.forma === 'credito' ? 'selected' : ''}>Crédito</option>
           <option value="debito" ${pg.forma === 'debito' ? 'selected' : ''}>Débito</option></select></div>
       <div class="campo"><label for="c-numero">Número do cartão</label><input id="c-numero" name="numero" inputmode="numeric" autocomplete="cc-number" maxlength="23"></div>
@@ -59,6 +67,13 @@ document.addEventListener('pedido-desenhado', (e) => {
     $('#pg-pix').classList.toggle('oculto', b.dataset.formaAba !== 'pix');
     $('#pg-cartao').classList.toggle('oculto', b.dataset.formaAba !== 'cartao');
   }));
+
+    // Vale-refeição: mostra a escolha da bandeira (Alelo, Pluxee, Ticket ou VR)
+  $('#c-forma')?.addEventListener('change', (ev) => {
+  const vale = ev.target.value === 'voucher';
+  $('#bloco-bandeira').classList.toggle('oculto', !vale);
+  $('#c-bandeira').disabled = !vale; // campo desativado não é enviado
+  });
 
   // Formata o número do cartão em blocos de 4 e a validade como MM/AA
   $('#c-numero')?.addEventListener('input', (ev) => { ev.target.value = ev.target.value.replace(/\D/g, '').slice(0, 19).replace(/(\d{4})(?=\d)/g, '$1 '); });

@@ -29,8 +29,14 @@
       <span>${qtd}</span>
       <button type="button" data-mais="${item.id}" aria-label="Aumentar">+</button></div>`;
   }
+    let focoPendente = null; 
   function desenharControles() {
     $$('[data-controle]').forEach((el) => { el.innerHTML = controleQuantidade(itensPorId[el.dataset.controle]); });
+    if (focoPendente) {
+      const id = focoPendente;
+      focoPendente = null;
+      ($(`[data-mais="${id}"]`) || $(`[data-adicionar="${id}"]`))?.focus();
+    }
   }
 
   try {
@@ -67,6 +73,7 @@
   $('#categorias').addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;
+        focoPendente = b.dataset.adicionar || b.dataset.mais || b.dataset.menos || null;
     if (b.dataset.adicionar) { Carrinho.adicionar(itensPorId[b.dataset.adicionar]); avisar('Item adicionado ao pedido'); }
     if (b.dataset.mais) Carrinho.alterar(Number(b.dataset.mais), +1);
     if (b.dataset.menos) Carrinho.alterar(Number(b.dataset.menos), -1);

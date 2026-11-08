@@ -26,6 +26,13 @@ Layout.paginaInicial = (u) => (u.equipe ? (paineisDo(u)[0]?.[0] || '/') : '/cont
 function desenharTopo() {
   const el = $('#topo');
   if (!el) return;
+    // Atalho de teclado: "Pular para o conteúdo" (aparece ao apertar Tab)
+  const principal = $('main');
+  if (principal && !$('.pular')) {
+    principal.id ||= 'principal';
+    principal.tabIndex = -1;
+    el.insertAdjacentHTML('beforebegin', `<a class="pular" href="#${principal.id}">Pular para o conteúdo</a>`);
+  }
   const u = Layout.usuario;
   const links = u?.equipe ? [['/cardapio', 'Cardápio']] : [['/', 'Início'], ['/cardapio', 'Cardápio']];
   if (!u) links.push(['/entrar', 'Entrar'], ['/cadastro', 'Criar conta']);
@@ -134,14 +141,15 @@ async function enviarFormulario(form, acao) {
   const botao = form.querySelector('button[type="submit"]');
   const caixa = form.querySelector('.mensagem');
   caixa?.classList.add('oculto');
-  if (botao) botao.disabled = true;
+    const textoOriginal = botao?.textContent;
+  if (botao) { botao.disabled = true; botao.textContent = 'Aguarde…'; botao.setAttribute('aria-busy', 'true'); }
   try {
     await acao(lerFormulario(form));
   } catch (e) {
     if (caixa) mostrarMensagem(caixa, e.message);
     else avisar(e.message, 'erro');
   } finally {
-    if (botao) botao.disabled = false;
+    if (botao) { botao.disabled = false; botao.textContent = textoOriginal; botao.removeAttribute('aria-busy'); }
   }
 }
 
@@ -166,7 +174,7 @@ const STATUS_PEDIDO = {
   cancelado: ['Cancelado', 'erro'],
 };
 const MODALIDADE = { entrega: 'Entrega', retirada: 'Retirada no balcão', salao: 'Consumo no salão' };
-const FORMA_PAGAMENTO = { credito: 'Cartão de crédito', debito: 'Cartão de débito', pix: 'Pix', dinheiro: 'Dinheiro' };
+const FORMA_PAGAMENTO = { credito: 'Cartão de crédito', debito: 'Cartão de débito', pix: 'Pix', dinheiro: 'Dinheiro', voucher: 'Vale-refeição' };
 
 function seloStatus(status) {
   const [rotulo, tipo] = STATUS_PEDIDO[status] || [status, ''];
