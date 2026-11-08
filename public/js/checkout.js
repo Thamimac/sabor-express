@@ -70,6 +70,7 @@
       forma_pagamento: valor('forma_pagamento'),
       troco_para: valor('forma_pagamento') === 'dinheiro' ? $('#troco').value : undefined,
       observacoes: $('#observacoes').value,
+      usar_fidelidade: $('#usar-fidelidade').checked,
     };
   }
 
@@ -94,7 +95,12 @@
       const r = await api.post('/api/pedidos/simular', corpo);
       if (minha !== simulacao) return; // ignora respostas antigas
       $('#r-subtotal').textContent = formatar.reais(r.subtotal_centavos);
-      $('#r-taxa').textContent = modalidade === 'entrega' ? formatar.reais(r.taxa_entrega_centavos) : 'Grátis';
+            if (r.fidelidade_desconto_centavos) {
+        $('#r-taxa').innerHTML = `<s class="suave">${formatar.reais(r.fidelidade_desconto_centavos)}</s> <strong>Grátis</strong>`;
+      } else {
+        $('#r-taxa').textContent = modalidade === 'entrega' ? formatar.reais(r.taxa_entrega_centavos) : 'Grátis';
+      }
+      $('#bloco-fidelidade').classList.toggle('oculto', !(modalidade === 'entrega' && r.fidelidade_disponivel > 0));
       $('#r-total').textContent = formatar.reais(r.total_centavos);
       $('#r-previsao').textContent = `Previsão: cerca de ${r.estimativa.totalMin} min (preparo ${r.estimativa.preparoMin} min`
         + (r.estimativa.entregaMin ? ` + entrega ${r.estimativa.entregaMin} min)` : ')');

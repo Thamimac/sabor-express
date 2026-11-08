@@ -236,3 +236,11 @@ CREATE TABLE IF NOT EXISTS avaliacoes (            -- satisfação do cliente ap
   comentario   TEXT,
   criado_em    TEXT NOT NULL
 );
+
+
+CREATE TABLE IF NOT EXISTS fidelidade_usos (       -- entregas grátis do programa de fidelidade já usadas
+  pedido_id       INTEGER PRIMARY KEY REFERENCES pedidos(id) ON DELETE CASCADE,
+  cliente_id      INTEGER NOT NULL REFERENCES usuarios(id),
+  valor_centavos  INTEGER NOT NULL,           -- taxa de entrega que o cliente deixou de pagar
+  criado_em       TEXT NOT NULL
+);

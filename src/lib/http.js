@@ -27,7 +27,7 @@ const HEADERS_SEGURANCA = {
   'Referrer-Policy': 'same-origin',
   'Permissions-Policy': 'geolocation=(), camera=(), microphone=()',
   'Content-Security-Policy':
-    "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'",
+    "default-src 'self'; img-src 'self' data: https://tile.openstreetmap.org; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'",
 };
 
 function parseCookies(header = '') {

@@ -7,22 +7,34 @@ const { HttpError } = require('../lib/erros');
 const { agora, agoraISO, minutosEntre } = require('../lib/util');
 const { tempoDeslocamentoMin } = require('./regras');
 
-// Direção aproximada de cada bairro a partir do restaurante (Sé), em graus (0 = norte, 90 = leste)
-const DIRECAO = {
-  'Sé': 30, 'República': 290, 'Liberdade': 175, 'Bela Vista': 220, 'Bom Retiro': 335, 'Santa Cecília': 305, 'Consolação': 250,
-  'Brás': 80, 'Cambuci': 150, 'Higienópolis': 285, 'Aclimação': 165, 'Barra Funda': 305, 'Mooca': 110, 'Paraíso': 200,
-  'Perdizes': 290, 'Vila Mariana': 195, 'Pari': 45, 'Santana': 5, 'Pinheiros': 255, 'Ipiranga': 160, 'Tatuapé': 85,
-  'Moema': 205, 'Butantã': 250, 'Santo Amaro': 200, 'Itaquera': 80,
+// Localização aproximada (centro) de cada bairro atendido, para o mapa real (latitude, longitude)
+const LOCAIS = {
+  'Sé': [-23.5468, -46.6362], 'República': [-23.5443, -46.6425], 'Liberdade': [-23.5587, -46.6350], 'Bela Vista': [-23.5614, -46.6474],
+  'Bom Retiro': [-23.5272, -46.6370], 'Santa Cecília': [-23.5370, -46.6510], 'Consolação': [-23.5536, -46.6590], 'Brás': [-23.5440, -46.6160],
+  'Cambuci': [-23.5680, -46.6230], 'Higienópolis': [-23.5440, -46.6600], 'Aclimação': [-23.5720, -46.6330], 'Barra Funda': [-23.5270, -46.6680],
+  'Mooca': [-23.5600, -46.5990], 'Paraíso': [-23.5760, -46.6420], 'Perdizes': [-23.5370, -46.6800], 'Vila Mariana': [-23.5890, -46.6350],
+  'Pari': [-23.5280, -46.6150], 'Santana': [-23.5020, -46.6250], 'Pinheiros': [-23.5660, -46.6900], 'Ipiranga': [-23.5870, -46.6100],
+  'Tatuapé': [-23.5400, -46.5760], 'Moema': [-23.6000, -46.6640], 'Butantã': [-23.5720, -46.7100], 'Santo Amaro': [-23.6540, -46.7100],
+  'Itaquera': [-23.5400, -46.4560],
 };
-function direcao(nome) {
-  if (DIRECAO[nome] != null) return DIRECAO[nome];
-  return [...nome].reduce((s, c) => s + c.charCodeAt(0), 0) % 360; // bairro novo: direção fixa calculada pelo nome
+
+// Coordenadas do bairro. Bairro cadastrado depois (sem localização conhecida): posição calculada pela
+// distância cadastrada, numa direção fixa derivada do nome.
+function coordenadas(nomeBairro, distanciaKm) {
+  if (LOCAIS[nomeBairro]) return { lat: LOCAIS[nomeBairro][0], lng: LOCAIS[nomeBairro][1] };
+  const graus = [...nomeBairro].reduce((s, c) => s + c.charCodeAt(0), 0) % 360;
+  const rad = (graus * Math.PI) / 180;
+  const { lat, lng } = config.restaurante;
+  return {
+    lat: +(lat + (Math.cos(rad) * distanciaKm) / 111.32).toFixed(5),
+    lng: +(lng + (Math.sin(rad) * distanciaKm) / (111.32 * Math.cos((lat * Math.PI) / 180))).toFixed(5),
+  };
 }
 
-// Coordenadas em km (x = leste, y = norte) com o restaurante em (0, 0)
-function coordenadas(nomeBairro, distanciaKm) {
-  const rad = (direcao(nomeBairro) * Math.PI) / 180;
-  return { x: Math.round(Math.sin(rad) * distanciaKm * 100) / 100, y: Math.round(Math.cos(rad) * distanciaKm * 100) / 100 };
+// Ponto no caminho entre o restaurante e o destino (fração de 0 a 1) — trajeto aproximado em linha reta
+function pontoNoCaminho(destino, fracao) {
+  const { lat, lng } = config.restaurante;
+  return { lat: +(lat + (destino.lat - lat) * fracao).toFixed(5), lng: +(lng + (destino.lng - lng) * fracao).toFixed(5) };
 }
 
 // Estado da entrega: progresso, posição, tempo restante, previsão de chegada e situação do SLA
@@ -35,7 +47,7 @@ function estadoDaEntrega(p, bairro, referencia = agora()) {
   if (p.status === 'despachado' || p.status === 'pronto') {
     // Ainda no restaurante: estima a chegada se o entregador sair agora (aceite em até 3 min + deslocamento)
     const chegada = new Date(referencia.getTime() + (config.sla.aceiteMin + deslocamento) * 60000).toISOString();
-    return { ...base, progresso: 0, posicao: { x: 0, y: 0 }, origem: 'aguardando', minutos_restantes: config.sla.aceiteMin + deslocamento,
+    return { ...base, progresso: 0, posicao: pontoNoCaminho(destino, 0), origem: 'aguardando', minutos_restantes: config.sla.aceiteMin + deslocamento,
       chegada_prevista: chegada, atrasado: prazoSla ? chegada > prazoSla : false };
   }
 
@@ -55,7 +67,7 @@ function estadoDaEntrega(p, bairro, referencia = agora()) {
   const chegada = new Date(referencia.getTime() + restantes * 60000).toISOString();
   return {
     ...base, progresso: Math.round(progresso * 100) / 100, origem,
-    posicao: { x: Math.round(destino.x * progresso * 100) / 100, y: Math.round(destino.y * progresso * 100) / 100 },
+    posicao: pontoNoCaminho(destino, progresso),
     km_restantes: Math.round(p.distancia_km * (1 - progresso) * 10) / 10,
     minutos_em_rota: Math.floor(decorrido), minutos_restantes: restantes, chegada_prevista: chegada,
     atrasado: prazoSla ? chegada > prazoSla : false,
@@ -64,7 +76,8 @@ function estadoDaEntrega(p, bairro, referencia = agora()) {
 
 // Visão geral para o mapa da logística
 function painel() {
-  const restaurante = { nome: config.restaurante.nome, endereco: config.restaurante.endereco, raioKm: config.restaurante.raioKm };
+  const { nome, endereco, raioKm, lat, lng } = config.restaurante;
+  const restaurante = { nome, endereco, raioKm, lat, lng };
   const bairros = todos('SELECT * FROM bairros ORDER BY nome').map((b) => ({ id: b.id, nome: b.nome, distancia_km: b.distancia_km,
     atende: b.distancia_km <= config.restaurante.raioKm, ...coordenadas(b.nome, b.distancia_km) }));
   const pedidos = todos(`SELECT p.*, e.nome AS entregador_nome, e.telefone AS entregador_telefone, e.veiculo AS entregador_veiculo,
@@ -91,4 +104,4 @@ function registrarPosicao(pedido, { progresso, km_restantes: kmRestantes }) {
   return fracao;
 }
 
-module.exports = { coordenadas, estadoDaEntrega, painel, registrarPosicao, DIRECAO };
+module.exports = { coordenadas, estadoDaEntrega, painel, registrarPosicao, LOCAIS };

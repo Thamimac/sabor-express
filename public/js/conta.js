@@ -34,6 +34,18 @@
       : '<li class="vazio">Você ainda não fez nenhum pedido.<br><br><a class="botao" href="/cardapio">Ver o cardápio</a></li>';
   }
 
+    // ---- Programa de fidelidade: a cada 10 pedidos entregues, uma entrega grátis ----
+  async function carregarFidelidade() {
+    const f = await api.get('/api/conta/fidelidade');
+    const selos = Array.from({ length: f.meta }, (_, i) => `<span class="selo-fidelidade ${i < f.progresso ? 'cheio' : ''}" aria-hidden="true"></span>`).join('');
+    $('#fidelidade').innerHTML = `
+      <div><strong>Cartão fidelidade</strong>
+        <p>${f.disponiveis ? `Você tem <strong>${f.disponiveis} entrega${f.disponiveis > 1 ? 's' : ''} grátis</strong> para usar no próximo pedido de entrega.`
+          : `Faltam <strong>${f.faltam} pedido${f.faltam > 1 ? 's' : ''}</strong> para você ganhar uma entrega grátis.`}</p></div>
+      <div class="selos-fidelidade" role="img" aria-label="${f.progresso} de ${f.meta} pedidos">${selos}</div>`;
+    $('#fidelidade').classList.remove('oculto');
+  }
+
   // ---- Endereços (RF24) ----
   async function carregarEnderecos() {
     const lista = await api.get('/api/conta/enderecos');
@@ -128,4 +140,5 @@
 
   carregarPedidos();
   carregarEnderecos();
+  carregarFidelidade();
 })();

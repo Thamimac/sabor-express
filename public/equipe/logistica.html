@@ -54,19 +54,29 @@
     </section>
 
     <!-- RF13 e RF14: acompanhamento dos entregadores e previsão de chegada -->
-    <section id="aba-mapa" role="tabpanel" class="oculto">
+        <section id="aba-mapa" role="tabpanel" class="oculto">
       <div class="layout-mapa">
         <div class="cartao mapa-cartao">
-          <svg id="mapa" viewBox="-420 -420 840 840" role="img" aria-label="Mapa das entregas em andamento"></svg>
+          <div class="mapa-real" id="mapa" role="img" aria-label="Mapa das entregas em andamento">
+            <div class="mapa-camada" id="mapa-fundo"></div>
+            <svg class="mapa-camada" id="mapa-desenho"></svg>
+            <div class="mapa-zoom" role="group" aria-label="Zoom do mapa">
+              <button type="button" data-zoom="1" aria-label="Aproximar">+</button>
+              <button type="button" data-zoom="-1" aria-label="Afastar">−</button>
+            </div>
+            <a class="mapa-creditos" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© colaboradores do OpenStreetMap</a>
+          </div>
           <div class="legenda pequeno">
             <span><i class="ponto no-prazo"></i> No prazo</span><span><i class="ponto atrasado"></i> Risco de atraso</span>
-            <span><i class="ponto aguardando"></i> Aguardando entregador</span><span class="suave" id="mapa-atualizado"></span>
+            <span><i class="ponto aguardando"></i> Aguardando entregador</span>
+            <span><i class="ponto faixa-1"></i> Taxa R$ 5</span><span><i class="ponto faixa-2"></i> Taxa R$ 8</span><span><i class="ponto faixa-3"></i> Taxa R$ 12</span>
+            <span class="suave" id="mapa-atualizado"></span>
           </div>
         </div>
         <div id="lista-rastreamento" class="cartoes"></div>
       </div>
     </section>
-
+    
     <!-- RF15: ocorrências (Gestão de Incidentes) -->
     <section id="aba-ocorrencias" role="tabpanel" class="oculto">
       <ul class="lista" id="lista-ocorrencias"></ul>

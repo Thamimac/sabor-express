@@ -44,12 +44,17 @@
     $('#meta-aceite').textContent = sla.aceiteMin;
     $('#meta-entrega').textContent = sla.entregaMin;
     const livres = painel.entregadores.filter((e) => !e.ocupado);
-    const ordenados = [...livres, ...painel.entregadores.filter((e) => e.ocupado)]; // livres primeiro
-    const opcoes = ordenados.map((e) => `<option value="${e.id}">${esc(e.nome)}${e.ocupado ? ' (em entrega)' : ''} · ${esc(e.veiculo || '')}</option>`).join('');
+    // O servidor já manda na ordem: livre há mais tempo primeiro (sugerido), depois os ocupados
+    const tempoLivre = (e) => (e.livre_ha_min == null ? 'sem entregas recentes'
+      : e.livre_ha_min >= 120 ? `livre há ${Math.floor(e.livre_ha_min / 60)} h` : `livre há ${e.livre_ha_min} min`);
+    const opcoes = painel.entregadores.map((e) => `<option value="${e.id}" ${e.id === painel.sugerido_id ? 'selected' : ''}>
+      ${e.id === painel.sugerido_id ? '★ Sugerido: ' : ''}${esc(e.nome)}${e.ocupado ? ' (em entrega)' : ` · ${tempoLivre(e)}`}</option>`).join('');
+    const sugerido = painel.entregadores.find((e) => e.id === painel.sugerido_id);
 
     $('#col-prontos').innerHTML = painel.prontos.map((p) => cartao(p, `
       ${cronometro(p.pronto_em, sla.entregaMin, 'desde que ficou pronto')}
       ${previsao(p.codigo, 'Se despachar agora, chega por volta de')}
+      ${sugerido ? `<p class="pequeno suave">Sugestão automática: <strong>${esc(sugerido.nome)}</strong>, o entregador livre há mais tempo.</p>` : '<p class="pequeno texto-erro">Nenhum entregador livre agora.</p>'}
       <div class="linha">
         <select data-entregador="${p.codigo}" aria-label="Entregador" style="flex:1">${opcoes}</select>
         <button class="botao pequeno" data-despachar="${p.codigo}">Despachar</button>
@@ -123,28 +128,61 @@
       ${e.atrasado ? '<span class="pequeno">⚠ Pode passar do prazo do SLA</span>' : ''}</div>`;
   }
 
-  // ---- Acompanhamento no mapa (RF13 e RF14) ----
-  const ESCALA = 48; // pixels por km no mapa
-  const pt = (c) => ({ x: c.x * ESCALA, y: -c.y * ESCALA }); // norte para cima
+  // ---- Acompanhamento no mapa real (RF13 e RF14) ----
+  // Mapa do OpenStreetMap montado com as "peças" (tiles) de 256 px, sem bibliotecas externas.
+  // As entregas são desenhadas por cima, em SVG, com a mesma projeção do mapa (Web Mercator).
+  const TILE = 256;
+  let zoom = 12;          // 12 mostra todo o raio de 8 km; dá para aproximar até 16
+  let fundoAtual = '';    // evita baixar as peças do mapa de novo a cada atualização
+  let ultimoMapa = null;
   const corDe = (e) => (e.status !== 'a_caminho' ? 'aguardando' : e.atrasado ? 'atrasado' : 'no-prazo');
+  function projetar(lat, lng, z) { // latitude/longitude → pixel no "mundo" do zoom z
+    const total = TILE * 2 ** z;
+    const seno = Math.sin((lat * Math.PI) / 180);
+    return { x: ((lng + 180) / 360) * total, y: (0.5 - Math.log((1 + seno) / (1 - seno)) / (4 * Math.PI)) * total };
+  }
 
-  async function carregarMapa() {
-    const d = await api.get('/api/logistica/rastreamento');
-    const taxas = { 3: 'R$ 5', 5: 'R$ 8', 8: 'R$ 12' };
-    const aneis = [...d.faixas].reverse().map((km, i) => `
-      <circle class="anel anel-${i}" r="${km * ESCALA}"></circle>
-      <text class="rotulo-anel" x="0" y="${-km * ESCALA + 16}" text-anchor="middle">${km} km · ${taxas[km] || ''}</text>`).join('');
+  function desenharMapa(d) {
+    const caixa = $('#mapa');
+    const W = caixa.clientWidth;
+    const H = caixa.clientHeight;
+    if (!W) return; // aba escondida
+    const centro = projetar(d.restaurante.lat, d.restaurante.lng, zoom);
+    const esq = centro.x - W / 2;
+    const topo = centro.y - H / 2;
+    const pt = (c) => { const p = projetar(c.lat, c.lng, zoom); return { x: +(p.x - esq).toFixed(1), y: +(p.y - topo).toFixed(1) }; };
+
+    // Fundo: peças do OpenStreetMap (só refaz quando muda o zoom ou o tamanho)
+    const chave = `${zoom}|${W}|${H}`;
+    if (chave !== fundoAtual) {
+      fundoAtual = chave;
+      const n = 2 ** zoom;
+      const pecas = [];
+      for (let tx = Math.floor(esq / TILE); tx <= Math.floor((esq + W) / TILE); tx += 1) {
+        for (let ty = Math.floor(topo / TILE); ty <= Math.floor((topo + H) / TILE); ty += 1) {
+          if (ty < 0 || ty >= n) continue;
+          pecas.push(`<img src="https://tile.openstreetmap.org/${zoom}/${((tx % n) + n) % n}/${ty}.png" alt="" draggable="false"
+            referrerpolicy="strict-origin-when-cross-origin" style="left:${Math.round(tx * TILE - esq)}px;top:${Math.round(ty * TILE - topo)}px">`);
+        }
+      }
+      $('#mapa-fundo').innerHTML = pecas.join('');
+      $$('#mapa-fundo img').forEach((img) => img.addEventListener('error', () => img.remove())); // sem internet: fica só o desenho
+    }
+
+    // Por cima: bairros (cor = faixa da taxa, pela distância de rota cadastrada), trajetos, entregadores e restaurante
+    const r = pt(d.restaurante);
+    const faixa = (km) => d.faixas.findIndex((limite) => km <= limite) + 1; // 1, 2 ou 3
     const bairros = d.bairros.filter((b) => b.atende).map((b) => {
       const p = pt(b);
-      return `<g class="bairro"><circle cx="${p.x}" cy="${p.y}" r="3"></circle><text x="${p.x + 6}" y="${p.y + 4}">${esc(b.nome)}</text></g>`;
+      return `<g class="bairro faixa-${faixa(b.distancia_km)}"><circle cx="${p.x}" cy="${p.y}" r="5"></circle>
+        <text x="${p.x + 8}" y="${p.y + 4}">${esc(b.nome)}</text><title>${esc(b.nome)}: ${formatar.km(b.distancia_km)} de rota</title></g>`;
     }).join('');
     const entregas = d.entregas.map((e) => {
       const destino = pt(e.destino);
       const pos = pt(e.posicao);
-      const classe = corDe(e);
-      return `<g class="entrega ${classe}">
-        <line class="rota" x1="0" y1="0" x2="${destino.x}" y2="${destino.y}"></line>
-        <line class="rota-feita" x1="0" y1="0" x2="${pos.x}" y2="${pos.y}"></line>
+      return `<g class="entrega ${corDe(e)}">
+        <line class="rota" x1="${r.x}" y1="${r.y}" x2="${destino.x}" y2="${destino.y}"></line>
+        <line class="rota-feita" x1="${r.x}" y1="${r.y}" x2="${pos.x}" y2="${pos.y}"></line>
         <circle class="destino" cx="${destino.x}" cy="${destino.y}" r="7"></circle>
         <text class="rotulo-destino" x="${destino.x + 10}" y="${destino.y - 8}">${esc(e.codigo)}</text>
         ${e.status === 'a_caminho' ? `<g class="moto" transform="translate(${pos.x} ${pos.y})">
@@ -152,10 +190,17 @@
           <title>${esc(e.codigo)} — ${esc(e.entregador?.nome || '')}: chega ${formatar.hora(e.chegada_prevista)}</title></g>` : ''}
       </g>`;
     }).join('');
-    $('#mapa').innerHTML = `<rect x="-420" y="-420" width="840" height="840" class="fundo-mapa"></rect>
-      ${aneis}${bairros}${entregas}
-      <g class="restaurante"><circle r="18"></circle><text y="6" text-anchor="middle">🍽️</text></g>
-      <text class="norte" x="390" y="-390" text-anchor="middle">N ↑</text>`;
+    const svg = $('#mapa-desenho');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.innerHTML = `${bairros}${entregas}
+      <g class="restaurante" transform="translate(${r.x} ${r.y})"><circle r="18"></circle><text y="6" text-anchor="middle">🍽️</text>
+        <title>${esc(d.restaurante.nome)} — ${esc(d.restaurante.endereco)}</title></g>`;
+  }
+
+  async function carregarMapa() {
+    const d = await api.get('/api/logistica/rastreamento');
+    ultimoMapa = d;
+    desenharMapa(d);
     $('#mapa-atualizado').textContent = `Atualizado às ${formatar.hora(d.atualizado_em)}`;
 
     $('#lista-rastreamento').innerHTML = d.entregas.map((e) => `
@@ -171,6 +216,14 @@
           <span class="pequeno ${e.atrasado ? 'texto-erro' : 'suave'}">Prazo SLA: ${formatar.hora(e.prazo_sla)}</span></div>
       </article>`).join('') || '<p class="vazio">Nenhuma entrega em andamento.</p>';
   }
+  // Zoom (+ / −) e redimensionamento da janela
+  $$('[data-zoom]').forEach((b) => b.addEventListener('click', () => {
+    zoom = Math.min(16, Math.max(11, zoom + Number(b.dataset.zoom)));
+    if (ultimoMapa) desenharMapa(ultimoMapa);
+  }));
+  let espera;
+  window.addEventListener('resize', () => { clearTimeout(espera); espera = setTimeout(() => ultimoMapa && desenharMapa(ultimoMapa), 200); });
+
   // Enquanto o mapa estiver aberto, atualiza a cada 10 segundos
   setInterval(() => { if (!$('#aba-mapa').classList.contains('oculto')) carregarMapa(); }, 10000);
   Layout.aoEvento('rastreamento', () => { if (!$('#aba-mapa').classList.contains('oculto')) carregarMapa(); carregar(); });

@@ -322,21 +322,28 @@ tfoot th { background: #f6ecdc; text-transform: none; font-size: .95rem; color: 
 /* ---- Parte 8.1: acompanhamento dos entregadores ---- */
 .layout-mapa { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1.4fr) minmax(300px, 1fr); align-items: start; }
 .mapa-cartao { padding: .75rem; }
-#mapa { width: 100%; height: auto; display: block; border-radius: 10px; }
-#mapa .fundo-mapa { fill: #f8f1e6; }
-#mapa .anel { stroke: #d9c9b4; stroke-width: 1.5; stroke-dasharray: 6 6; }
-#mapa .anel-0 { fill: #fcf8f2; } #mapa .anel-1 { fill: #f8f1e6; } #mapa .anel-2 { fill: #f2e6d3; }
-#mapa .rotulo-anel { font-size: 13px; fill: #7a655a; font-weight: 600; }
-#mapa .bairro circle { fill: #c9b49a; }
-#mapa .bairro text { font-size: 11px; fill: #7a655a; }
-#mapa .rota { stroke: #c9b49a; stroke-width: 2; stroke-dasharray: 4 5; }
+/* Mapa real: peças do OpenStreetMap no fundo e o desenho das entregas por cima */
+.mapa-real { position: relative; height: 560px; overflow: hidden; border-radius: 10px; background: #f2ede4; user-select: none; }
+.mapa-camada { position: absolute; inset: 0; width: 100%; height: 100%; }
+#mapa-fundo img { position: absolute; width: 256px; height: 256px; max-width: none; }
+#mapa-desenho { pointer-events: none; }
+#mapa-desenho .moto, #mapa-desenho .restaurante { pointer-events: auto; }
+.mapa-zoom { position: absolute; top: .75rem; right: .75rem; display: grid; gap: 2px; z-index: 2; }
+.mapa-zoom button { width: 36px; height: 36px; border: 1px solid var(--cor-borda); background: #fff; font-size: 1.3rem; line-height: 1; cursor: pointer; border-radius: 6px; }
+.mapa-zoom button:hover { background: var(--creme); }
+.mapa-creditos { position: absolute; right: 0; bottom: 0; z-index: 2; background: rgba(255, 255, 255, .85); color: var(--cor-texto); font-size: .72rem; padding: .1rem .4rem; }
+#mapa .bairro circle { stroke: #fff; stroke-width: 1.5; }
+#mapa .faixa-1 circle, .ponto.faixa-1 { fill: #3b7dd8; background: #3b7dd8; }
+#mapa .faixa-2 circle, .ponto.faixa-2 { fill: #8e5bd6; background: #8e5bd6; }
+#mapa .faixa-3 circle, .ponto.faixa-3 { fill: #d06b16; background: #d06b16; }
+#mapa .bairro text { font-size: 11px; fill: #3b2b25; font-weight: 600; paint-order: stroke; stroke: #fff; stroke-width: 3px; }
+#mapa .rota { stroke: #7a655a; stroke-width: 2; stroke-dasharray: 4 5; }
 #mapa .rota-feita { stroke-width: 4; stroke-linecap: round; }
 #mapa .destino { fill: #fff; stroke-width: 3; }
-#mapa .rotulo-destino { font-size: 13px; font-weight: 700; fill: var(--cor-texto); }
+#mapa .rotulo-destino { font-size: 13px; font-weight: 700; fill: var(--cor-texto); paint-order: stroke; stroke: #fff; stroke-width: 3px; }
 #mapa .moto circle { fill: #fff; stroke-width: 3; }
 #mapa .moto text, #mapa .restaurante text { font-size: 16px; }
-#mapa .restaurante circle { fill: var(--cor-primaria); }
-#mapa .norte { font-size: 14px; font-weight: 700; fill: #7a655a; }
+#mapa .restaurante circle { fill: var(--cor-primaria); stroke: #fff; stroke-width: 3; }
 #mapa .no-prazo .rota-feita, #mapa .no-prazo .destino, #mapa .no-prazo .moto circle { stroke: var(--cor-sucesso); }
 #mapa .atrasado .rota-feita, #mapa .atrasado .destino, #mapa .atrasado .moto circle { stroke: var(--cor-erro); }
 #mapa .aguardando .destino { stroke: #a08c80; }
@@ -350,6 +357,7 @@ tfoot th { background: #f6ecdc; text-transform: none; font-size: .95rem; color: 
 .previsao.atrasado { color: var(--cor-erro); }
 .texto-erro { color: var(--cor-erro); font-weight: 600; }
 @media (max-width: 1000px) { .layout-mapa { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .mapa-real { height: 420px; } }
 
 /* ---- Parte 9: página inicial (fotos grandes, inspirada em sites de restaurantes) ---- */
 .botao.grande { min-height: 52px; padding: .75rem 1.6rem; font-size: 1.05rem; }
@@ -451,6 +459,16 @@ tfoot th { background: #f6ecdc; text-transform: none; font-size: .95rem; color: 
 @media (max-width: 520px) {
   .pratos, .passos { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ---- Programa de fidelidade ---- */
+.cartao-fidelidade { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;
+  padding: 1rem 1.25rem; background: var(--creme); border: 1px solid var(--cor-borda); border-left: 5px solid var(--vermelho); border-radius: var(--raio); }
+.cartao-fidelidade strong:first-child { font-family: var(--fonte-titulo); color: var(--vinho); font-size: 1.15rem; }
+.cartao-fidelidade p { margin: .2rem 0 0; }
+.selos-fidelidade { display: flex; gap: .35rem; flex-wrap: wrap; }
+.selo-fidelidade { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--vermelho); background: #fff; }
+.selo-fidelidade.cheio { background: var(--vermelho); }
+.fidelidade-opcao { background: var(--creme); padding: .6rem .75rem; border-radius: var(--raio); font-size: .9rem; margin: .25rem 0; }
 
 /* ---- Cardápio: fotos dos pratos ---- */
 .item-foto { width: 96px; height: 96px; object-fit: cover; border-radius: var(--raio); flex: none; background: #f6ecdc; }

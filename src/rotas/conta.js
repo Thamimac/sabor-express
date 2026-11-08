@@ -6,6 +6,7 @@ const { exigirLogin, encerrarSessao, encerrarTodasAsSessoes } = require('../lib/
 const { texto, telefone, senhaForte, agoraISO } = require('../lib/util');
 const enderecos = require('../services/enderecos');
 const auditoria = require('../services/auditoria');
+const fidelidade = require('../services/fidelidade');
 
 const STATUS_EM_ANDAMENTO = ['aguardando_confirmacao', 'recebido', 'em_preparo', 'pronto', 'despachado', 'a_caminho'];
 
@@ -66,6 +67,10 @@ module.exports = (app) => {
 
   // ---- RF25: histórico de pedidos do próprio cliente ----
   app.get('/api/conta/pedidos', exigirLogin, (ctx) => historicoDePedidos(ctx.usuario.id));
+
+  
+  // Programa de fidelidade: progresso e entregas grátis disponíveis
+  app.get('/api/conta/fidelidade', exigirLogin, (ctx) => fidelidade.situacao(ctx.usuario.id));
 
   // ---- LGPD: portabilidade (baixar meus dados) ----
   app.get('/api/conta/meus-dados', exigirLogin, (ctx) => {

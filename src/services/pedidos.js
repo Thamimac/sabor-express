@@ -8,6 +8,7 @@ const enderecos = require('./enderecos');
 const auditoria = require('./auditoria');
 const { barramento, publicar } = require('./eventos');
 const fotos = require('./fotos');
+const fidelidade = require('./fidelidade');
 
 const MODALIDADES = ['entrega', 'retirada', 'salao'];
 const FORMAS_PAGAMENTO = ['credito', 'debito', 'pix', 'dinheiro', 'voucher'];
@@ -83,7 +84,15 @@ function montar(usuario, dados) {
     }
     r.distanciaKm = r.endereco.distancia_km;
     r.bairroId = r.endereco.bairro_id;
-    r.taxa = regras.taxaEntrega(r.distanciaKm); // regras de domínio 2 e 3
+       r.taxa = regras.taxaEntrega(r.distanciaKm); // regras de domínio 2 e 3
+    // Programa de fidelidade: entrega grátis se o cliente tiver uma disponível (e não desmarcou a opção)
+    if (!usuario.equipe) {
+      r.fidelidadeDisponivel = fidelidade.situacao(usuario.id).disponiveis;
+      if (r.fidelidadeDisponivel > 0 && dados.usar_fidelidade !== false) {
+        r.fidelidadeDesconto = r.taxa;
+        r.taxa = 0;
+      }
+    }
   }
   if (modalidade === 'salao') r.mesa = inteiro(dados.mesa, 'número da mesa', { min: 1, max: 40 });
 
@@ -104,6 +113,8 @@ function resumoSimulacao(m) {
     total_centavos: m.total,
     distancia_km: m.distanciaKm,
     estimativa: m.estimativa,
+    fidelidade_disponivel: m.fidelidadeDisponivel || 0,
+    fidelidade_desconto_centavos: m.fidelidadeDesconto || 0,
     itens: m.itens.map(({ tempo_preparo_min, ...i }) => i),
   };
 }
@@ -153,6 +164,7 @@ function criar(ctx, dados) {
     executar('INSERT INTO historico_status (pedido_id, status, usuario_id, em) VALUES (?, ?, ?, ?)', id, 'aguardando_confirmacao', usuario.id, agoraTxt);
     executar(`INSERT INTO pagamentos (pedido_id, forma, valor_centavos, status, criado_em, atualizado_em)
               VALUES (?, ?, ?, 'pendente', ?, ?)`, id, forma, m.total, agoraTxt, agoraTxt);
+          if (m.fidelidadeDesconto) fidelidade.registrarUso(id, clienteId, m.fidelidadeDesconto);        
     return id;
   });
 
@@ -174,6 +186,7 @@ function obter(idOuCodigo) {
   p.entregador = p.entregador_id ? um('SELECT id, nome, telefone, veiculo, empresa FROM entregadores WHERE id = ?', p.entregador_id) : null;
   p.ocorrencias = todos('SELECT * FROM ocorrencias WHERE pedido_id = ? ORDER BY id', p.id);
   p.avaliacao = um('SELECT nota, comentario, criado_em FROM avaliacoes WHERE pedido_id = ?', p.id);
+  p.fidelidade = fidelidade.usouNoPedido(p.id);
   return p;
 }
 

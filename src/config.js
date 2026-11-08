@@ -19,7 +19,13 @@ module.exports = {
     cnpj: '12.345.678/0001-90',
     telefone: '(11) 3333-4444',
     raioKm: 8,
+    lat: -23.5512, // localização do restaurante no mapa (Sé)
+    lng: -46.6339,
   },
+
+    // Programa de fidelidade: entrega grátis a cada N pedidos entregues
+  fidelidade: { pedidosPorPremio: 10 },
+
   // SLA acordado com a RotaLog Entregas (item 3.2.4 da documentação)
   sla: {
     aceiteMin: 3,

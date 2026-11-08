@@ -316,4 +316,44 @@ describe('Melhorias — avaliação, fotos, rastreamento e QR Code', () => {
     const recibo = await u.cliente.get(`/api/pedidos/${p.codigo}/recibo`);
     assert.equal(recibo.dados.pagamento.cartao, 'Alelo final 1111');
   });
+
+  
+describe('Inovações — fidelidade e sugestão de entregador', () => {
+  test('fidelidade: a cada 10 pedidos entregues o cliente ganha uma entrega grátis (e recupera se cancelar)', async () => {
+    const { getDb } = require('../src/db/database');
+    const antes = (await u.cliente.get('/api/conta/fidelidade')).dados;
+    // Faz pedidos de retirada e marca como entregues até completar a meta
+    const faltam = antes.faltam;
+    for (let i = 0; i < faltam; i += 1) {
+      const p = await novoPedido({ itens: [{ item_id: 2, quantidade: 1 }], modalidade: 'retirada', forma_pagamento: 'pix' });
+      getDb().prepare("UPDATE pedidos SET status = 'entregue' WHERE codigo = ?").run(p.codigo);
+    }
+    const depois = (await u.cliente.get('/api/conta/fidelidade')).dados;
+    assert.equal(depois.disponiveis, antes.disponiveis + 1);
+
+    const sim = (await u.cliente.post('/api/pedidos/simular', pedidoEntrega)).dados;
+    assert.equal(sim.taxa_entrega_centavos, 0, 'taxa grátis');
+    assert.ok(sim.fidelidade_desconto_centavos > 0);
+    const semUsar = (await u.cliente.post('/api/pedidos/simular', { ...pedidoEntrega, usar_fidelidade: false })).dados;
+    assert.ok(semUsar.taxa_entrega_centavos > 0, 'cliente pode guardar para depois');
+
+    const p = await novoPedido(pedidoEntrega);
+    assert.equal(p.taxa_entrega_centavos, 0);
+    assert.equal(p.fidelidade, true);
+    assert.equal((await u.cliente.get('/api/conta/fidelidade')).dados.disponiveis, antes.disponiveis, 'benefício usado');
+    await u.cliente.post(`/api/pedidos/${p.codigo}/cancelar`);
+    assert.equal((await u.cliente.get('/api/conta/fidelidade')).dados.disponiveis, antes.disponiveis + 1, 'cancelado: benefício volta');
+  });
+
+  test('logística sugere o entregador livre há mais tempo', async () => {
+    const r = (await u.logistica.get('/api/logistica/painel')).dados;
+    const livres = r.entregadores.filter((e) => !e.ocupado);
+    if (!livres.length) return assert.equal(r.sugerido_id, null);
+    assert.equal(r.sugerido_id, livres[0].id);
+    const ordem = livres.map((e) => e.ultima_entrega_em || '');
+    assert.deepEqual(ordem, [...ordem].sort(), 'livres ordenados pela última entrega (mais antiga primeiro)');
+    assert.ok(r.entregadores.findIndex((e) => e.ocupado) === -1 || r.entregadores.findIndex((e) => e.ocupado) >= livres.length, 'ocupados no fim');
+  });
+});
+
 });

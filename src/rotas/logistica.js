@@ -66,6 +66,13 @@ module.exports = (app) => {
       p.ocorrencias_abertas = abertas.filter((o) => o.pedido_id === p.id).length;
     }
     const ocupados = new Set(lista.filter((p) => ['despachado', 'a_caminho'].includes(p.status)).map((p) => p.entregador_id));
+        // Escolha automática: sugere o entregador livre há mais tempo (quem nunca entregou vem primeiro)
+    const entregadores = todos(`SELECT e.*, (SELECT MAX(p.entregue_em) FROM pedidos p WHERE p.entregador_id = e.id) AS ultima_entrega_em
+                                FROM entregadores e WHERE e.ativo = 1 ORDER BY e.nome`)
+      .map((e) => ({ ...e, ocupado: ocupados.has(e.id),
+        livre_ha_min: !ocupados.has(e.id) && e.ultima_entrega_em ? Math.floor(minutosEntre(e.ultima_entrega_em, agora)) : null }))
+      .sort((a, b) => (a.ocupado - b.ocupado) || ((a.ultima_entrega_em || '') < (b.ultima_entrega_em || '') ? -1 : 1));
+    const sugerido = entregadores.find((e) => !e.ocupado) || null;
     return {
       sla: config.sla,
       em_preparo: lista.filter((p) => p.status === 'em_preparo'),
@@ -74,7 +81,8 @@ module.exports = (app) => {
       a_caminho: lista.filter((p) => p.status === 'a_caminho'),
       entregues: lista.filter((p) => p.status === 'entregue').reverse(),
       ocorrencias: abertas,
-      entregadores: todos('SELECT * FROM entregadores WHERE ativo = 1 ORDER BY nome').map((e) => ({ ...e, ocupado: ocupados.has(e.id) })),
+            entregadores,
+      sugerido_id: sugerido?.id || null,
     };
   });
 

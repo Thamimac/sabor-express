@@ -60,7 +60,7 @@
         </section>
         <aside class="cartao resumo">
           <div class="linha entre"><span>Subtotal</span><span>${formatar.reais(p.subtotal_centavos)}</span></div>
-          <div class="linha entre"><span>Taxa de entrega</span><span>${p.taxa_entrega_centavos ? formatar.reais(p.taxa_entrega_centavos) : 'Grátis'}</span></div>
+          <div class="linha entre"><span>Taxa de entrega</span><span>${p.taxa_entrega_centavos ? formatar.reais(p.taxa_entrega_centavos) : p.fidelidade ? 'Grátis (fidelidade)' : 'Grátis'}</span></div>
           <hr class="separador">
           <div class="linha entre total"><span>Total</span><strong>${formatar.reais(p.total_centavos)}</strong></div>
           <p class="pequeno">Pagamento: ${esc(FORMA_PAGAMENTO[p.forma_pagamento])} · <strong>${esc(p.pagamento?.status || '')}</strong>
