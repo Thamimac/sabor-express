@@ -7,6 +7,8 @@ const auditoria = require('../services/auditoria');
 const pedidos = require('../services/pedidos');
 const regras = require('../services/regras');
 const { conectar } = require('../services/eventos');
+const rastreamento = require('../services/rastreamento');
+const config = require('../config');
 
 module.exports = (app) => {
   // RF01 — Cardápio digital por categorias (público)
@@ -26,6 +28,26 @@ module.exports = (app) => {
 
   // RF05 — Confirmação / acompanhamento do pedido
   app.get('/api/pedidos/:codigo', exigirLogin, (ctx) => pedidos.obterPermitido(ctx.usuario, ctx.params.codigo));
+
+    // Acompanhamento da entrega pelo cliente: onde está o entregador e quando chega (mapa na tela do pedido)
+  app.get('/api/pedidos/:codigo/rastreio', exigirLogin, (ctx) => {
+    const { codigo } = pedidos.obterPermitido(ctx.usuario, ctx.params.codigo); // só o dono do pedido (ou a equipe)
+    const p = um(`SELECT p.*, b.nome AS bairro_nome, e.nome AS entregador_nome, e.veiculo AS entregador_veiculo
+                  FROM pedidos p LEFT JOIN bairros b ON b.id = p.bairro_id LEFT JOIN entregadores e ON e.id = p.entregador_id
+                  WHERE p.codigo = ?`, codigo);
+    if (p.modalidade !== 'entrega' || !['pronto', 'despachado', 'a_caminho'].includes(p.status)) return { ativo: false, status: p.status };
+    const e = rastreamento.estadoDaEntrega(p, { nome: p.bairro_nome });
+    const { nome, endereco, lat, lng } = config.restaurante;
+    // Para o cliente vão só os dados da própria entrega (sem prazos internos do SLA)
+    return {
+      ativo: true, status: p.status, bairro: p.bairro_nome,
+      restaurante: { nome, endereco, lat, lng }, destino: e.destino, posicao: e.posicao,
+      progresso: e.progresso, origem: e.origem, km_restantes: e.km_restantes ?? p.distancia_km,
+      minutos_restantes: e.minutos_restantes, chegada_prevista: e.chegada_prevista,
+      entregador: p.entregador_nome ? { nome: p.entregador_nome, veiculo: p.entregador_veiculo } : null,
+      atualizado_em: agoraISO(),
+    };
+  });
 
   // RF06 — Cancelamento pelo cliente enquanto "aguardando confirmação"
   app.post('/api/pedidos/:codigo/cancelar', exigirLogin, (ctx) => {

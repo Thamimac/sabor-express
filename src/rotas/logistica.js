@@ -176,7 +176,7 @@ module.exports = (app) => {
     }
     if (evento === 'posicao') {
       const fracao = rastreamento.registrarPosicao(pedido, ctx.body);
-      publicar('rastreamento', { codigo: pedido.codigo, progresso: fracao }, { perfis: ['logistica'] });
+      publicar('rastreamento', { codigo: pedido.codigo, progresso: fracao }, { perfis: ['logistica'], clienteId: pedido.cliente_id });
       return { codigo: pedido.codigo, status: pedido.status, progresso: Math.round(fracao * 100) };
     }
 

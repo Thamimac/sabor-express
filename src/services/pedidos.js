@@ -9,6 +9,7 @@ const auditoria = require('./auditoria');
 const { barramento, publicar } = require('./eventos');
 const fotos = require('./fotos');
 const fidelidade = require('./fidelidade');
+const estoque = require('./estoque');
 
 const MODALIDADES = ['entrega', 'retirada', 'salao'];
 const FORMAS_PAGAMENTO = ['credito', 'debito', 'pix', 'dinheiro', 'voucher'];
@@ -40,9 +41,14 @@ const CAMPO_DATA = {
 function cardapio({ incluirIndisponiveis = false } = {}) {
   const categorias = todos('SELECT * FROM categorias ORDER BY ordem, nome');
   const itens = todos(`SELECT * FROM itens ${incluirIndisponiveis ? '' : 'WHERE disponivel = 1'} ORDER BY nome`);
+    const saldos = estoque.mapa(); // itens com controle de estoque
   return categorias.map((c) => ({
     ...c,
-    itens: itens.filter((i) => i.categoria_id === c.id).map((i) => ({ ...i, disponivel: !!i.disponivel, destaque: !!i.destaque, foto: fotos.urlDaFoto(i.id) })),
+    itens: itens.filter((i) => i.categoria_id === c.id).map((i) => ({
+      ...i, disponivel: !!i.disponivel, destaque: !!i.destaque, foto: fotos.urlDaFoto(i.id),
+      estoque: saldos[i.id]?.quantidade ?? null, // null = sem controle (feito na hora)
+      esgotado: saldos[i.id]?.quantidade === 0,
+    })),
   })).filter((c) => c.itens.length || incluirIndisponiveis);
 }
 
@@ -67,6 +73,8 @@ function montar(usuario, dados) {
       observacao: texto(l.observacao, 'observação do item', { obrigatorio: false, max: 140 }),
     };
   });
+
+  estoque.verificar(itens); // "Esgotado" ou "só restam N unidades"
 
   const modalidade = opcao(dados.modalidade, 'modalidade', MODALIDADES);
   const r = { itens, modalidade, mesa: null, endereco: null, distanciaKm: null, bairroId: null, taxa: 0 };
@@ -145,6 +153,7 @@ function criar(ctx, dados) {
   }
 
   const agoraTxt = agoraISO();
+  let estoqueBaixo = [];
   const pedidoId = transacao(() => {
     const { id } = executar(
       `INSERT INTO pedidos (cliente_id, criado_por_id, cliente_nome, cliente_telefone, modalidade, mesa, endereco_texto,
@@ -164,9 +173,11 @@ function criar(ctx, dados) {
     executar('INSERT INTO historico_status (pedido_id, status, usuario_id, em) VALUES (?, ?, ?, ?)', id, 'aguardando_confirmacao', usuario.id, agoraTxt);
     executar(`INSERT INTO pagamentos (pedido_id, forma, valor_centavos, status, criado_em, atualizado_em)
               VALUES (?, ?, ?, 'pendente', ?, ?)`, id, forma, m.total, agoraTxt, agoraTxt);
-          if (m.fidelidadeDesconto) fidelidade.registrarUso(id, clienteId, m.fidelidadeDesconto);        
+              if (m.fidelidadeDesconto) fidelidade.registrarUso(id, clienteId, m.fidelidadeDesconto);
+    estoqueBaixo = estoque.baixar(id, m.itens, usuario.id); // baixa automática no estoque
     return id;
   });
+  estoque.avisarEstoqueBaixo(estoqueBaixo);
 
   const pedido = obter(pedidoId);
   auditoria.registrar(ctx, 'pedido_criado', { entidade: 'pedido', id: pedido.codigo, detalhes: { total: pedido.total_centavos, modalidade: pedido.modalidade } });
@@ -246,7 +257,9 @@ function mudarStatus(ctx, idOuCodigo, novo, { motivo = null, entregadorId = null
       pedido.id, novo, ctx.usuario.id, observacao || (novo === 'cancelado' ? campos.motivo_cancelamento : null), agoraTxt);
     if (novo === 'cancelado') {
       executar("UPDATE pagamentos SET status = 'cancelado', atualizado_em = ? WHERE pedido_id = ? AND status IN ('pendente','recusado')", agoraTxt, pedido.id);
+      estoque.devolver(pedido.id, ctx.usuario.id); // o que foi reservado volta para o estoque
     }
+      
   });
 
   const atualizado = obter(pedido.id);

@@ -7,7 +7,7 @@
   const indicador = (rotulo, valor, classe = '') => `<div class="indicador ${classe}"><span>${rotulo}</span><strong>${valor}</strong></div>`;
   const precoTexto = (c) => (c / 100).toFixed(2).replace('.', ',');
 
-  const carregadores = { visao: carregarVisao, cardapio: carregarCardapio, avaliacoes: carregarAvaliacoes, mesas: carregarMesas,
+  const carregadores = { visao: carregarVisao, cardapio: carregarCardapio, estoque: carregarEstoque, avaliacoes: carregarAvaliacoes, mesas: carregarMesas,    
     equipe: carregarEquipe, config: carregarConfig,
     auditoria: carregarAuditoria, emails: carregarEmails, backup: carregarBackups };
   let abaAtual = 'visao';
@@ -230,6 +230,151 @@
     });
   });
 
+  // ---- Estoque de ingredientes e fichas técnicas ----
+  const SITUACAO_ESTOQUE = { ok: '<span class="selo sucesso">Normal</span>', baixo: '<span class="selo alerta">Estoque baixo</span>',
+    esgotado: '<span class="selo erro">Acabou</span>' };
+  const MOVIMENTO = { entrada: 'Entrada', venda: 'Venda', devolucao: 'Devolução (cancelado)', ajuste: 'Ajuste' };
+  const qtd = (n, unidade) => `${Number(n).toLocaleString('pt-BR', { maximumFractionDigits: 3 })} ${unidade}`;
+  let estoque = { ingredientes: [], pratos: [], unidades: [] };
+
+  async function carregarEstoque() {
+    estoque = await api.get('/api/gestao/estoque');
+    const { ingredientes, pratos, movimentos } = estoque;
+    const conta = (s) => ingredientes.filter((i) => i.situacao === s).length;
+    const pratosEsgotados = pratos.filter((p) => p.porcoes === 0).length;
+    $('#ind-estoque').innerHTML = [
+      indicador('Ingredientes', ingredientes.length),
+      indicador('Estoque baixo', conta('baixo'), conta('baixo') ? 'alerta' : ''),
+      indicador('Ingredientes que acabaram', conta('esgotado'), conta('esgotado') ? 'alerta' : ''),
+      indicador('Pratos esgotados', pratosEsgotados, pratosEsgotados ? 'alerta' : ''),
+    ].join('');
+
+    $('#tabela-ingredientes').innerHTML = ingredientes.map((i) => `<tr>
+        <td><strong>${esc(i.nome)}</strong><br><small class="suave">${i.usado_em.length ? `Usado em: ${esc(i.usado_em.join(', '))}` : 'Não está em nenhuma ficha técnica'}</small></td>
+        <td class="num"><strong class="${i.situacao === 'ok' ? '' : 'texto-erro'}">${qtd(i.quantidade, i.unidade)}</strong></td>
+        <td class="num">${qtd(i.minimo, i.unidade)}</td>
+        <td>${SITUACAO_ESTOQUE[i.situacao]}</td>
+        <td><form class="linha entrada-estoque" data-entrada="${i.id}" novalidate>
+          <label class="leitor" for="en-${i.id}">Quantidade de ${esc(i.nome)} que chegou, em ${i.unidade}</label>
+          <input id="en-${i.id}" name="quantidade" type="number" min="0.001" max="100000" step="any" inputmode="decimal" placeholder="Qtd." required>
+          <span class="pequeno suave">${i.unidade}</span>
+          <button type="submit" class="botao pequeno">+ Entrada</button></form></td>
+        <td><button type="button" class="botao neutro pequeno" data-corrigir-ingrediente="${i.id}">Corrigir</button></td>
+      </tr>`).join('') || '<tr><td colspan="6" class="vazio">Nenhum ingrediente cadastrado.</td></tr>';
+
+    $('#tabela-fichas').innerHTML = pratos.map((p) => `<tr>
+        <td><strong>${esc(p.nome)}</strong><br><small class="suave">${esc(p.categoria)}</small></td>
+        <td><small>${p.ficha.length ? p.ficha.map((f) => `${qtd(f.quantidade, f.unidade)} de ${esc(f.nome.toLowerCase())}`).join(' · ') : '<span class="suave">Sem ficha técnica (sem controle de estoque)</span>'}</small></td>
+        <td class="num">${p.porcoes == null ? '—' : p.porcoes === 0 ? '<span class="selo erro">Esgotado</span>' : `<strong class="${p.porcoes <= 5 ? 'texto-erro' : ''}">${p.porcoes}</strong>`}</td>
+        <td><button type="button" class="botao neutro pequeno" data-editar-ficha="${p.item_id}">Editar ficha</button></td>
+      </tr>`).join('');
+
+    $('#tabela-movimentos').innerHTML = movimentos.map((m) => `<tr><td>${formatar.dataHora(m.em)}</td><td>${esc(m.nome)}</td>
+        <td>${MOVIMENTO[m.tipo]}</td><td class="num ${m.quantidade < 0 ? 'texto-erro' : 'texto-sucesso'}">${m.quantidade > 0 ? '+' : ''}${qtd(m.quantidade, m.unidade)}</td>
+        <td class="num">${qtd(m.saldo, m.unidade)}</td><td><small>${m.pedido ? `Pedido ${esc(m.pedido)}` : esc(m.observacao || '')}${m.usuario ? ` · ${esc(m.usuario)}` : ''}</small></td></tr>`).join('')
+      || '<tr><td colspan="6" class="vazio">Nenhuma movimentação.</td></tr>';
+    $$('#tabela-ingredientes form').forEach(ativarValidacao);
+  }
+
+  // Entrada de mercadoria (cada linha da tabela tem o seu formulário)
+  $('#tabela-ingredientes').addEventListener('submit', (e) => {
+    const form = e.target.closest('[data-entrada]');
+    if (!form) return;
+    e.preventDefault();
+    enviarFormulario(form, async (dados) => {
+      const r = await api.post(`/api/gestao/ingredientes/${form.dataset.entrada}/entrada`, { quantidade: dados.quantidade });
+      avisar(`Entrada registrada. Agora há ${qtd(r.quantidade, r.unidade)} de ${r.nome.toLowerCase()}.`, 'sucesso');
+      carregarEstoque();
+    });
+  });
+
+  // Limpa as mensagens de erro de um formulário antes de abrir o diálogo
+  function limparFormulario(form) {
+    form.reset();
+    $$('[aria-invalid]', form).forEach((c) => marcarCampo(c, ''));
+    $('.mensagem', form).classList.add('oculto');
+  }
+  $$('[data-fechar-dialogo]').forEach((b) => b.addEventListener('click', () => b.closest('dialog').close()));
+
+  // Novo ingrediente ou correção depois de contar o estoque
+  const dialogoIngrediente = $('#dialogo-ingrediente');
+  let ingredienteAberto = null; // null = novo
+  function abrirIngrediente(id = null) {
+    const form = $('#form-ingrediente');
+    limparFormulario(form);
+    const i = id && estoque.ingredientes.find((x) => String(x.id) === String(id));
+    ingredienteAberto = i ? i.id : null;
+    $('#ig-unidade').innerHTML = estoque.unidades.map((u) => `<option value="${u}">${u}</option>`).join('');
+    $('.so-novo', form).classList.toggle('oculto', !!i);
+    $('#titulo-ingrediente').textContent = i ? `Corrigir ${i.nome.toLowerCase()}` : 'Novo ingrediente';
+    $('#ingrediente-ajuda').textContent = i
+      ? `Use depois de contar o estoque. A diferença fica registrada como ajuste. Quantidades em ${i.unidade}.`
+      : 'Cadastre o ingrediente e depois coloque-o na ficha técnica dos pratos.';
+    $('#ig-qtd').value = i ? i.quantidade : '';
+    $('#ig-min').value = i ? i.minimo : '';
+    dialogoIngrediente.showModal();
+  }
+  $('#novo-ingrediente').addEventListener('click', () => abrirIngrediente());
+  $('#form-ingrediente').addEventListener('submit', (e) => {
+    e.preventDefault();
+    enviarFormulario(e.target, async (dados) => {
+      if (ingredienteAberto) await api.put(`/api/gestao/ingredientes/${ingredienteAberto}`, dados);
+      else await api.post('/api/gestao/ingredientes', dados);
+      dialogoIngrediente.close();
+      avisar(ingredienteAberto ? 'Estoque corrigido' : 'Ingrediente cadastrado', 'sucesso');
+      carregarEstoque();
+    });
+  });
+
+  // Ficha técnica: uma linha por ingrediente (ingrediente + quantidade por porção)
+  const dialogoFicha = $('#dialogo-ficha');
+  let fichaAberta = null;
+  let linhaN = 0;
+  function linhaFicha(f = {}) {
+    linhaN += 1;
+    const n = linhaN;
+    const opcoes = estoque.ingredientes.map((i) => `<option value="${i.id}" data-unidade="${i.unidade}" ${i.id === f.ingrediente_id ? 'selected' : ''}>${esc(i.nome)} (${i.unidade})</option>`).join('');
+    return `<li class="linha-ficha">
+      <div class="campo"><label for="fi-ing-${n}">Ingrediente</label>
+        <select id="fi-ing-${n}" name="ingrediente_id" required><option value="">Escolha…</option>${opcoes}</select></div>
+      <div class="campo"><label for="fi-qtd-${n}">Quantidade por porção</label>
+        <input id="fi-qtd-${n}" name="quantidade" type="number" min="0.001" max="100000" step="any" inputmode="decimal" value="${f.quantidade ?? ''}" required></div>
+      <button type="button" class="botao neutro pequeno" data-remover-linha aria-label="Remover ingrediente">Remover</button>
+    </li>`;
+  }
+  function abrirFicha(itemId) {
+    const p = estoque.pratos.find((x) => String(x.item_id) === String(itemId));
+    fichaAberta = p.item_id;
+    const form = $('#form-ficha');
+    delete form.dataset.validacao; // as linhas mudam: a validação é ligada de novo
+    $('.mensagem', form).classList.add('oculto');
+    $('#titulo-ficha').textContent = `Ficha técnica — ${p.nome}`;
+    $('#linhas-ficha').innerHTML = (p.ficha.length ? p.ficha : [{}]).map(linhaFicha).join('');
+    dialogoFicha.showModal();
+  }
+  $('#adicionar-linha-ficha').addEventListener('click', () => {
+    $('#linhas-ficha').insertAdjacentHTML('beforeend', linhaFicha());
+    delete $('#form-ficha').dataset.validacao;
+    $('#linhas-ficha li:last-child select').focus();
+  });
+  $('#linhas-ficha').addEventListener('click', (e) => {
+    if (!e.target.closest('[data-remover-linha]')) return;
+    e.target.closest('li').remove();
+    $('#adicionar-linha-ficha').focus();
+  });
+  $('#form-ficha').addEventListener('submit', (e) => {
+    e.preventDefault();
+    enviarFormulario(e.target, async () => {
+      const ingredientes = $$('#linhas-ficha li').map((li) => ({
+        ingrediente_id: Number($('select', li).value), quantidade: $('input', li).value,
+      }));
+      const r = await api.put(`/api/gestao/fichas/${fichaAberta}`, { ingredientes });
+      dialogoFicha.close();
+      avisar(r.porcoes == null ? 'Ficha removida: prato sem controle de estoque' : `Ficha salva. Dá para fazer ${r.porcoes} porções.`, 'sucesso');
+      carregarEstoque();
+    });
+  });
+
   // ---- Auditoria ----
   async function carregarAuditoria() {
     const q = new URLSearchParams(Object.entries(lerFormulario($('#form-auditoria'))).filter(([, v]) => v)).toString();
@@ -269,6 +414,8 @@
       else if (d.disponivel) { await api.post(`/api/gestao/itens/${d.disponivel}/disponivel`, { disponivel: d.valor === '1' }); avisar('Cardápio atualizado'); carregarCardapio(); }
       else if (d.tempo) { await api.put(`/api/gestao/categorias/${d.tempo}`, { tempo_preparo_min: $(`#tp-${d.tempo}`).value }); avisar('Tempo de preparo salvo'); }
       else if (d.ativo) { await api.post(`/api/gestao/usuarios/${d.ativo}/ativo`, { ativo: d.valor === '1' }); avisar('Funcionário atualizado'); carregarEquipe(); }
+      else if (d.corrigirIngrediente) abrirIngrediente(d.corrigirIngrediente);
+      else if (d.editarFicha) abrirFicha(d.editarFicha);
       else if (d.senha) {
         const senha = prompt('Nova senha (mínimo 8 caracteres, com letras e números):');
         if (!senha) return;

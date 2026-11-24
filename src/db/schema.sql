@@ -244,3 +244,36 @@ CREATE TABLE IF NOT EXISTS fidelidade_usos (       -- entregas grátis do progra
   valor_centavos  INTEGER NOT NULL,           -- taxa de entrega que o cliente deixou de pagar
   criado_em       TEXT NOT NULL
 );
+
+-- Estoque de ingredientes (insumos). Cada prato tem uma ficha técnica com os ingredientes de uma porção.
+CREATE TABLE IF NOT EXISTS ingredientes (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  nome           TEXT NOT NULL UNIQUE,
+  unidade        TEXT NOT NULL CHECK (unidade IN ('kg', 'g', 'L', 'ml', 'un')),
+  quantidade     REAL NOT NULL DEFAULT 0 CHECK (quantidade >= 0),
+  minimo         REAL NOT NULL DEFAULT 0 CHECK (minimo >= 0),   -- abaixo disso a equipe é avisada
+  atualizado_em  TEXT NOT NULL
+);
+
+-- Ficha técnica: quanto de cada ingrediente vai em UMA porção do prato
+-- (prato sem ficha técnica não tem controle de estoque)
+CREATE TABLE IF NOT EXISTS fichas_tecnicas (
+  item_id         INTEGER NOT NULL REFERENCES itens(id) ON DELETE CASCADE,
+  ingrediente_id  INTEGER NOT NULL REFERENCES ingredientes(id),
+  quantidade      REAL NOT NULL CHECK (quantidade > 0),
+  PRIMARY KEY (item_id, ingrediente_id)
+);
+
+-- Histórico de todas as entradas e saídas de ingredientes (quem, quando, por quê)
+CREATE TABLE IF NOT EXISTS movimentos_estoque (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  ingrediente_id  INTEGER NOT NULL REFERENCES ingredientes(id) ON DELETE CASCADE,
+  tipo            TEXT NOT NULL CHECK (tipo IN ('entrada', 'venda', 'devolucao', 'ajuste')),
+  quantidade      REAL NOT NULL,             -- positivo entra, negativo sai
+  saldo           REAL NOT NULL,             -- quantidade depois do movimento
+  pedido_id       INTEGER REFERENCES pedidos(id) ON DELETE SET NULL,
+  usuario_id      INTEGER REFERENCES usuarios(id),
+  observacao      TEXT,
+  em              TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_mov_estoque_ingrediente ON movimentos_estoque(ingrediente_id, id);

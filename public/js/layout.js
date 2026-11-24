@@ -143,7 +143,14 @@ async function enviarFormulario(form, acao) {
   caixa?.classList.add('oculto');
     const textoOriginal = botao?.textContent;
   if (botao) { botao.disabled = true; botao.textContent = 'Aguarde…'; botao.setAttribute('aria-busy', 'true'); }
-  try {
+   try {
+    if (!validarFormulario(form)) {
+      const n = $$('[aria-invalid="true"]', form).length;
+      const unico = $('[aria-invalid="true"]', form);
+      // Com caixa de mensagem no formulário, o detalhe já está embaixo do campo; sem caixa, o aviso traz o detalhe
+      throw new Error(n > 1 ? `Corrija os ${n} campos destacados em vermelho.`
+        : (!caixa && erroDoCampo(unico)) || 'Corrija o campo destacado em vermelho.');
+    }
     await acao(lerFormulario(form));
   } catch (e) {
     if (caixa) mostrarMensagem(caixa, e.message);
@@ -180,3 +187,199 @@ function seloStatus(status) {
   const [rotulo, tipo] = STATUS_PEDIDO[status] || [status, ''];
   return `<span class="selo ${tipo}">${esc(rotulo)}</span>`;
 }
+
+
+// ---------------------------------------------------------------------------
+// Validação dos formulários na própria tela (antes de enviar ao servidor)
+// O servidor valida tudo de novo: esta parte só ajuda o usuário a corrigir na hora.
+// ---------------------------------------------------------------------------
+const REGRA_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// Nome do campo como aparece na tela (texto do <label>, sem "(opcional)")
+function rotuloDo(campo) {
+  const label = campo.id && $(`label[for="${campo.id}"]`);
+  return (label?.textContent || campo.name || 'campo').replace(/\(opcional\)/i, '').trim();
+}
+
+// Campo de senha nova: precisa seguir a regra de senha forte
+const ehSenha = (c) => c.type === 'password' || c.dataset.senha === '1'; // continua senha mesmo com "Mostrar" ativado
+const ehSenhaNova = (c) => c.dataset.forte === '1' || (ehSenha(c) && !!c.name &&
+  (c.autocomplete === 'new-password' || !!c.closest('.campo')?.querySelector('.ajuda')));
+
+// Devolve a mensagem de erro do campo, ou '' se estiver certo
+function erroDoCampo(campo) {
+  const v = campo.type === 'checkbox' ? campo.checked : String(campo.value || '').trim();
+  if (campo.required && !v) {
+    if (campo.dataset.msgObrigatorio) return campo.dataset.msgObrigatorio;
+    if (campo.name === 'consentimento') return 'Para criar a conta, é preciso aceitar a Política de Privacidade (LGPD).';
+    if (campo.type === 'checkbox') return 'É preciso marcar esta opção para continuar.';
+    if (campo.tagName === 'SELECT') return `Escolha uma opção em "${rotuloDo(campo)}".`;
+    return `Preencha o campo "${rotuloDo(campo)}".`;
+  }
+  if (!v || campo.type === 'checkbox') return '';
+
+  if (campo.type === 'email' && !REGRA_EMAIL.test(v)) return 'Digite um e-mail válido, por exemplo: nome@email.com';
+  if (campo.type === 'tel') {
+    const d = v.replace(/\D/g, '');
+    if (d.length < 10 || d.length > 11) return 'Informe o número com DDD, por exemplo: (11) 91234-5678';
+  }
+  if (/(^|\.)cep$/.test(campo.name) && v.replace(/\D/g, '').length !== 8) return 'O CEP deve ter 8 números, por exemplo: 01001-000';
+  if (campo.name === 'nome' || campo.name === 'cliente_nome') {
+    if (v.length < 3) return 'O nome deve ter pelo menos 3 letras.';
+  }
+  if (campo.type === 'number') {
+    const n = Number(v.replace(',', '.'));
+    if (!Number.isFinite(n)) return 'Digite apenas números.';
+    if (campo.min !== '' && n < Number(campo.min)) return `O valor mínimo é ${campo.min}.`;
+    if (campo.max !== '' && n > Number(campo.max)) return `O valor máximo é ${campo.max}.`;
+    if (campo.step !== 'any' && !campo.step.includes('.') && !Number.isInteger(n)) return 'Use um número inteiro, sem vírgula.';
+  }
+  if (campo.minLength > 0 && v.length < campo.minLength) return `Use pelo menos ${campo.minLength} caracteres.`;
+
+  if (ehSenhaNova(campo)) {
+    const falta = requisitosSenha(campo.value).filter((r) => !r.ok).map((r) => r.texto.toLowerCase());
+    if (falta.length) return `A senha precisa ter: ${falta.join(', ')}.`;
+  }
+  // "Confirme a senha": campo de senha sem name, comparado com a senha nova do mesmo formulário
+  if (ehSenha(campo) && !campo.name) {
+    const original = [...campo.form.elements].find(ehSenhaNova);
+    if (original && campo.value !== original.value) return 'As senhas não conferem. Digite a mesma senha nos dois campos.';
+  }
+  return '';
+}
+
+function requisitosSenha(senha = '') {
+  return [
+    { texto: 'Pelo menos 8 caracteres', ok: senha.length >= 8 },
+    { texto: 'Uma letra', ok: /[A-Za-z]/.test(senha) },
+    { texto: 'Um número', ok: /\d/.test(senha) },
+  ];
+}
+
+// Mostra (ou apaga) a mensagem embaixo do campo, avisando também leitores de tela
+function marcarCampo(campo, mensagem) {
+  if (!campo.id) campo.id = `campo-${Math.random().toString(36).slice(2, 8)}`;
+  const idErro = `${campo.id}-erro`;
+  let el = document.getElementById(idErro);
+  if (!mensagem) {
+    campo.removeAttribute('aria-invalid');
+    el?.remove();
+    campo.setAttribute('aria-describedby', (campo.getAttribute('aria-describedby') || '').replace(idErro, '').trim());
+    if (!campo.getAttribute('aria-describedby')) campo.removeAttribute('aria-describedby');
+    return true;
+  }
+  if (!el) {
+    el = document.createElement('p');
+    el.id = idErro;
+    el.className = 'erro-campo';
+    const ancora = document.getElementById(`${campo.id}-requisitos`) || campo.closest('.caixa-checagem') || campo.closest('.senha-caixa') || campo;
+    ancora.insertAdjacentElement('afterend', el);
+    const desc = new Set((campo.getAttribute('aria-describedby') || '').split(' ').filter(Boolean));
+    desc.add(idErro);
+    campo.setAttribute('aria-describedby', [...desc].join(' '));
+  }
+  el.textContent = mensagem;
+  campo.setAttribute('aria-invalid', 'true');
+  return false;
+}
+
+// Só valida campos que estão visíveis e habilitados
+const campoVisivel = (c) => !c.disabled && c.type !== 'hidden' && c.getClientRects().length > 0;
+
+function validarCampo(campo) { return marcarCampo(campo, erroDoCampo(campo)); }
+
+// Valida o formulário inteiro e leva o cursor até o primeiro campo com erro
+function validarFormulario(form) {
+  ativarValidacao(form);
+  const campos = [...form.elements].filter((c) => /INPUT|SELECT|TEXTAREA/.test(c.tagName) && campoVisivel(c));
+  const invalidos = campos.filter((c) => !validarCampo(c));
+  invalidos[0]?.focus();
+  return invalidos.length === 0;
+}
+
+// Máscaras: o telefone e o CEP ganham a formatação enquanto a pessoa digita
+function mascaraTelefone(v) {
+  const d = v.replace(/\D/g, '').slice(0, 11);
+  if (d.length <= 2) return d.length ? `(${d}` : '';
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+}
+function mascaraCep(v) {
+  const d = v.replace(/\D/g, '').slice(0, 8);
+  return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d;
+}
+
+// Liga a validação em tempo real num formulário (pode ser chamada mais de uma vez)
+function ativarValidacao(form) {
+  if (form.dataset.validacao) return;
+  form.dataset.validacao = '1';
+  form.noValidate = true; // usamos as nossas mensagens, em português, no lugar das do navegador
+
+  for (const campo of form.elements) {
+    if (!/INPUT|SELECT|TEXTAREA/.test(campo.tagName)) continue;
+
+    if (campo.type === 'tel') campo.addEventListener('input', () => { campo.value = mascaraTelefone(campo.value); });
+    if (/(^|\.)cep$/.test(campo.name)) campo.addEventListener('input', () => { campo.value = mascaraCep(campo.value); });
+
+    if (campo.type === 'password') { campo.dataset.senha = '1'; adicionarMostrarSenha(campo); }
+    if (ehSenhaNova(campo)) { campo.dataset.forte = '1'; adicionarRequisitosSenha(campo); }
+
+    // Valida ao sair do campo; depois do primeiro erro, revalida a cada tecla para o erro sumir na hora
+    campo.addEventListener('blur', (e) => {
+      // Se a pessoa clicou em "Enviar", o envio já valida tudo (evita a tela "pular" e o clique se perder)
+      if (e.relatedTarget?.type === 'submit') return;
+      if (campo.value || campo.dataset.tocado) validarCampo(campo);
+    });
+    campo.addEventListener('input', () => {
+      campo.dataset.tocado = '1';
+      if (campo.getAttribute('aria-invalid')) validarCampo(campo);
+      // Ao mudar a senha, a confirmação também é conferida de novo
+      if (ehSenhaNova(campo)) {
+        [...form.elements].filter((c) => ehSenha(c) && !c.name && c.value).forEach(validarCampo);
+      }
+    });
+    campo.addEventListener('change', () => { if (campo.getAttribute('aria-invalid')) validarCampo(campo); });
+  }
+}
+
+// Botão "Mostrar" / "Ocultar" ao lado dos campos de senha
+function adicionarMostrarSenha(campo) {
+  const caixa = document.createElement('span');
+  caixa.className = 'senha-caixa';
+  campo.replaceWith(caixa);
+  caixa.appendChild(campo);
+  const botao = document.createElement('button');
+  botao.type = 'button';
+  botao.className = 'mostrar-senha';
+  botao.textContent = 'Mostrar';
+  botao.setAttribute('aria-label', `Mostrar ${rotuloDo(campo).toLowerCase()}`);
+  botao.addEventListener('click', () => {
+    const visivel = campo.type === 'text';
+    campo.type = visivel ? 'password' : 'text';
+    botao.textContent = visivel ? 'Mostrar' : 'Ocultar';
+    botao.setAttribute('aria-label', `${visivel ? 'Mostrar' : 'Ocultar'} ${rotuloDo(campo).toLowerCase()}`);
+    campo.focus();
+  });
+  caixa.appendChild(botao);
+}
+
+// Lista "8 caracteres / uma letra / um número" que vai ficando verde enquanto a pessoa digita
+function adicionarRequisitosSenha(campo) {
+  const ajuda = campo.closest('.campo')?.querySelector('.ajuda');
+  const lista = document.createElement('ul');
+  lista.className = 'requisitos-senha';
+  lista.id = `${campo.id}-requisitos`;
+  const desenhar = () => {
+    lista.innerHTML = requisitosSenha(campo.value).map((r) =>
+      `<li class="${r.ok ? 'ok' : ''}"><span aria-hidden="true">${r.ok ? '✓' : '•'}</span> ${r.texto}<span class="leitor">${r.ok ? ' — atendido' : ' — pendente'}</span></li>`).join('');
+  };
+  desenhar();
+  campo.addEventListener('input', desenhar);
+  if (ajuda) ajuda.replaceWith(lista);
+  else campo.closest('.senha-caixa').insertAdjacentElement('afterend', lista);
+  campo.setAttribute('aria-describedby', `${campo.getAttribute('aria-describedby') || ''} ${lista.id}`.trim());
+}
+
+// Ativa automaticamente em todos os formulários da página
+document.addEventListener('DOMContentLoaded', () => $$('form').forEach(ativarValidacao));

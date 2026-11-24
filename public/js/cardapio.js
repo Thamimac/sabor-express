@@ -22,6 +22,7 @@
   }
 
   function controleQuantidade(item) {
+    if (item.esgotado) return '<span class="selo-esgotado">Esgotado</span>';
     const qtd = Carrinho.quantidadeDe(item.id);
     if (!qtd) return `<button type="button" class="botao pequeno" data-adicionar="${item.id}">Adicionar</button>`;
     return `<div class="contador" role="group" aria-label="Quantidade de ${esc(item.nome)}">
@@ -51,11 +52,12 @@
         <h2>${esc(c.icone || '')} ${esc(c.nome)} <span class="suave pequeno">· preparo médio ${c.tempo_preparo_min} min</span></h2>
         <div class="grade-itens">
           ${c.itens.map((i) => `
-            <article class="item-cardapio ${i.foto ? 'com-foto' : ''}">
+              <article class="item-cardapio ${i.foto ? 'com-foto' : ''} ${i.esgotado ? 'esgotado' : ''}">
               ${i.foto ? `<img class="item-foto" src="${esc(i.foto)}" alt="${esc(i.nome)}" loading="lazy">`
                 : `<div class="item-icone" aria-hidden="true">${esc(c.icone || '🍽️')}</div>`}
               <div class="item-corpo">
                 <h3>${esc(i.nome)} ${i.destaque ? '<span class="selo alerta sem-ponto">Mais pedido</span>' : ''}</h3>
+                ${!i.esgotado && i.estoque != null && i.estoque <= 5 ? `<span class="ultimas-unidades">${i.estoque === 1 ? 'Última porção!' : `Últimas ${i.estoque} porções`}</span>` : ''}
                 <p class="suave pequeno">${esc(i.descricao || '')}</p>
                 <div class="linha entre">
                   <strong class="preco">${formatar.reais(i.preco_centavos)}</strong>
@@ -74,6 +76,12 @@
     const b = e.target.closest('button');
     if (!b) return;
         focoPendente = b.dataset.adicionar || b.dataset.mais || b.dataset.menos || null;
+            // Não deixa pedir mais do que há em estoque
+    const id = b.dataset.adicionar || b.dataset.mais;
+    const item = id && itensPorId[id];
+    if (item && item.estoque != null && Carrinho.quantidadeDe(item.id) >= item.estoque) {
+      avisar(`Só ${item.estoque === 1 ? 'temos 1 porção' : `temos ${item.estoque} porções`} de "${item.nome}" no momento.`, 'erro');
+    }
     if (b.dataset.adicionar) { Carrinho.adicionar(itensPorId[b.dataset.adicionar]); avisar('Item adicionado ao pedido'); }
     if (b.dataset.mais) Carrinho.alterar(Number(b.dataset.mais), +1);
     if (b.dataset.menos) Carrinho.alterar(Number(b.dataset.menos), -1);

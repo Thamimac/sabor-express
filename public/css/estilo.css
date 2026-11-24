@@ -512,3 +512,50 @@ tfoot th { background: #f6ecdc; text-transform: none; font-size: .95rem; color: 
   .item-cardapio { flex-wrap: wrap; }
   .item-acao { width: 100%; justify-content: flex-end; margin-top: -.25rem; }
 }
+
+/* ---- Validação dos formulários ---- */
+.erro-campo { color: var(--cor-erro); font-size: .88rem; margin: .3rem 0 0; display: flex; gap: .35rem; align-items: flex-start; }
+.erro-campo::before { content: "!"; flex: none; width: 1.1rem; height: 1.1rem; border-radius: 50%; background: var(--cor-erro); color: #fff; font-size: .75rem; font-weight: 700; display: grid; place-items: center; margin-top: .1rem; }
+[aria-invalid="true"] { border-color: var(--cor-erro) !important; background: #fff8f7; }
+[aria-invalid="true"]:focus { box-shadow: 0 0 0 3px rgba(179, 38, 30, .18) !important; }
+input[type="checkbox"][aria-invalid="true"] { outline: 2px solid var(--cor-erro); outline-offset: 2px; }
+.senha-caixa { position: relative; display: block; }
+.senha-caixa input { padding-right: 5.5rem; }
+.mostrar-senha { position: absolute; right: .35rem; top: 50%; transform: translateY(-50%); background: none; border: 0; color: var(--vermelho); font: inherit; font-size: .85rem; font-weight: 600; padding: .4rem .6rem; min-height: 36px; cursor: pointer; border-radius: var(--raio); }
+.mostrar-senha:hover { background: var(--creme-claro); }
+.mostrar-senha:focus-visible { outline: 2px solid var(--vermelho); outline-offset: 1px; }
+.requisitos-senha { list-style: none; padding: 0; margin: .35rem 0 0; display: flex; flex-wrap: wrap; gap: .2rem 1rem; font-size: .85rem; color: var(--cor-texto-suave); }
+.requisitos-senha li.ok { color: var(--cor-sucesso); font-weight: 600; }
+
+/* ---- Mapa da entrega na tela do pedido (cliente) ---- */
+.acompanhar-entrega { margin: 1rem 0 1.5rem; }
+.acompanhar-entrega h2 { font-size: 1.25rem; margin: 0; }
+.rastreio-resumo { margin: .5rem 0 .75rem; }
+.mapa-cliente { height: 380px; margin-top: .75rem; }
+#mapa-cliente-fundo img { position: absolute; width: 256px; height: 256px; max-width: none; }
+#mapa-cliente-desenho { pointer-events: none; }
+#mapa-cliente .rota { stroke: #7a655a; stroke-width: 2.5; stroke-dasharray: 5 6; }
+#mapa-cliente .rota-feita { stroke: var(--cor-sucesso); stroke-width: 5; stroke-linecap: round; }
+#mapa-cliente circle { fill: #fff; stroke-width: 3; }
+#mapa-cliente .restaurante circle { fill: var(--vermelho); stroke: #fff; }
+#mapa-cliente .casa circle { stroke: var(--vinho); }
+#mapa-cliente .moto circle { stroke: var(--cor-sucesso); }
+#mapa-cliente text { font-size: 17px; }
+@media (max-width: 600px) { .mapa-cliente { height: 300px; } }
+
+/* ---- Estoque ---- */
+.entrada-estoque { flex-wrap: nowrap; gap: .4rem; }
+.entrada-estoque input { width: 90px; min-height: 36px; padding: .35rem .5rem; }
+.entrada-estoque .erro-campo { display: none; } /* o aviso aparece no topo; a linha fica compacta */
+.lista-simples { list-style: none; padding: 0; margin: .75rem 0 0; }
+.lista-simples li { padding: .5rem 0; border-top: 1px solid var(--cor-borda); }
+.texto-sucesso { color: var(--cor-sucesso); }
+.dialogo-pequeno { width: min(520px, 100% - 2rem); }
+.selo-esgotado { display: inline-block; font-size: .8rem; font-weight: 700; color: #fff; background: #6e5a52; border-radius: 999px; padding: .2rem .7rem; }
+.ultimas-unidades { font-size: .8rem; font-weight: 700; color: #7a5300; }
+.item-cardapio.esgotado .item-corpo, .item-cardapio.esgotado .item-foto, .item-cardapio.esgotado .item-icone { opacity: .55; }
+.entrada-estoque button { white-space: nowrap; }
+.linhas-ficha { list-style: none; padding: 0; margin: 1rem 0 0; }
+.linha-ficha { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; gap: .75rem; align-items: start; }
+.linha-ficha > button { margin-top: 1.9rem; }
+@media (max-width: 600px) { .linha-ficha { grid-template-columns: 1fr; } .linha-ficha > button { margin-top: 0; } }

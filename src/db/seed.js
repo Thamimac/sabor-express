@@ -54,6 +54,44 @@ const ITENS = [
   ['Sobremesas', 'Petit gâteau', 'Bolinho quente de chocolate com sorvete de creme.', 2290, 1],
 ];
 
+// Estoque de ingredientes [nome, unidade, quantidade em estoque, estoque mínimo].
+// O leite condensado começa zerado (pudim e mousse aparecem esgotados) e o salmão abaixo do mínimo,
+// para mostrar na demonstração o "Esgotado" no cardápio e o aviso de estoque baixo.
+const INGREDIENTES = [
+  ['Arroz', 'kg', 30, 5], ['Feijão preto', 'kg', 10, 3], ['Feijão carioca', 'kg', 12, 3],
+  ['Carnes da feijoada', 'kg', 12, 3], ['Couve', 'kg', 4, 1], ['Farinha de mandioca', 'kg', 6, 1],
+  ['Laranja', 'kg', 20, 5], ['Filé de frango', 'kg', 15, 4], ['Carne bovina', 'kg', 12, 3],
+  ['Picanha', 'kg', 6, 2], ['Salmão', 'kg', 1.2, 1.5], ['Peixe branco', 'kg', 5, 1.5],
+  ['Bacalhau', 'kg', 4, 1], ['Batata', 'kg', 25, 5], ['Mandioca', 'kg', 8, 2],
+  ['Cogumelos', 'kg', 2, 0.5], ['Arroz arbóreo', 'kg', 4, 1], ['Queijo muçarela', 'kg', 5, 1],
+  ['Queijo parmesão', 'kg', 2, 0.5], ['Massa de pastel', 'kg', 4, 1], ['Óleo', 'L', 20, 5],
+  ['Folhas verdes', 'un', 25, 6], ['Ovos', 'un', 150, 30], ['Leite', 'L', 12, 3],
+  ['Creme de leite', 'un', 30, 6], ['Leite condensado', 'un', 0, 6], ['Polpa de maracujá', 'kg', 3, 1],
+  ['Chocolate meio amargo', 'kg', 3, 1], ['Sorvete de creme', 'L', 5, 1],
+  ['Refrigerante lata', 'un', 150, 24], ['Água mineral 500 ml', 'un', 100, 24],
+];
+
+// Ficha técnica: ingredientes de UMA porção de cada prato [prato, [[ingrediente, quantidade], ...]]
+const FICHAS_TECNICAS = [
+  ['Pastel de carne (2 un.)', [['Massa de pastel', 0.1], ['Carne bovina', 0.08], ['Óleo', 0.05]]],
+  ['Bolinho de bacalhau (6 un.)', [['Bacalhau', 0.15], ['Batata', 0.1], ['Ovos', 1], ['Óleo', 0.08]]],
+  ['Salada da casa', [['Folhas verdes', 1]]],
+  ['Frango grelhado', [['Filé de frango', 0.2], ['Arroz', 0.12], ['Feijão carioca', 0.1], ['Batata', 0.2], ['Óleo', 0.05]]],
+  ['Feijoada executiva', [['Feijão preto', 0.12], ['Carnes da feijoada', 0.2], ['Arroz', 0.12], ['Couve', 0.08], ['Farinha de mandioca', 0.05], ['Laranja', 0.1]]],
+  ['Strogonoff de frango', [['Filé de frango', 0.18], ['Creme de leite', 0.5], ['Arroz', 0.12], ['Batata', 0.1]]],
+  ['Parmegiana de carne', [['Carne bovina', 0.2], ['Queijo muçarela', 0.06], ['Ovos', 1], ['Arroz', 0.12], ['Batata', 0.2], ['Óleo', 0.08]]],
+  ['Picanha na chapa (2 pessoas)', [['Picanha', 0.5], ['Arroz', 0.25], ['Mandioca', 0.3], ['Farinha de mandioca', 0.05], ['Óleo', 0.08]]],
+  ['Salmão com legumes', [['Salmão', 0.25], ['Batata', 0.2], ['Leite', 0.05]]],
+  ['Risoto de cogumelos', [['Arroz arbóreo', 0.12], ['Cogumelos', 0.12], ['Queijo parmesão', 0.03]]],
+  ['Moqueca de peixe (2 pessoas)', [['Peixe branco', 0.6], ['Arroz', 0.25], ['Farinha de mandioca', 0.06]]],
+  ['Refrigerante lata 350 ml', [['Refrigerante lata', 1]]],
+  ['Suco natural 500 ml', [['Laranja', 0.6]]],
+  ['Água mineral 500 ml', [['Água mineral 500 ml', 1]]],
+  ['Pudim de leite', [['Leite condensado', 0.25], ['Leite', 0.06], ['Ovos', 1]]],
+  ['Mousse de maracujá', [['Leite condensado', 0.2], ['Creme de leite', 0.2], ['Polpa de maracujá', 0.08]]],
+  ['Petit gâteau', [['Chocolate meio amargo', 0.06], ['Ovos', 1], ['Sorvete de creme', 0.08]]],
+];
+
 // [nome, e-mail, telefone, perfil] — equipe interna (item 3.1.7 da documentação)
 const EQUIPE = [
   ['Ana Proprietária', 'gerente@saborexpress.com.br', '(11) 98888-0001', 'gerente'],
@@ -90,6 +128,22 @@ function popular(db) {
     for (const [cat, nome, desc, preco, destaque] of ITENS) {
       run('INSERT INTO itens (categoria_id, nome, descricao, preco_centavos, destaque, criado_em) VALUES (?, ?, ?, ?, ?, ?)',
         idCategoria[cat], nome, desc, preco, destaque, agora);
+    }
+
+        // Estoque inicial de ingredientes e ficha técnica de cada prato
+    const idIngrediente = {};
+    for (const [nome, unidade, qtd, minimo] of INGREDIENTES) {
+      const id = Number(run('INSERT INTO ingredientes (nome, unidade, quantidade, minimo, atualizado_em) VALUES (?, ?, ?, ?, ?)',
+        nome, unidade, qtd, minimo, agora).lastInsertRowid);
+      idIngrediente[nome] = id;
+      run(`INSERT INTO movimentos_estoque (ingrediente_id, tipo, quantidade, saldo, observacao, em)
+           VALUES (?, 'ajuste', ?, ?, 'Estoque inicial', ?)`, id, qtd, qtd, agora);
+    }
+    for (const [prato, linhas] of FICHAS_TECNICAS) {
+      const { id } = db.prepare('SELECT id FROM itens WHERE nome = ?').get(prato);
+      for (const [ing, qtd] of linhas) {
+        run('INSERT INTO fichas_tecnicas (item_id, ingrediente_id, quantidade) VALUES (?, ?, ?)', id, idIngrediente[ing], qtd);
+      }
     }
 
     const hashEquipe = hashSenha(SENHA_EQUIPE);

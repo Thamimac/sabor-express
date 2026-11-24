@@ -12,6 +12,7 @@ const sla = require('../services/sla');
 const backup = require('../services/backup');
 const auditoria = require('../services/auditoria');
 const fotos = require('../services/fotos');
+const estoque = require('../services/estoque');
 const { relatorio } = require('./financeiro');
 
 const exigirGerente = exigirPerfil(); // sem perfis listados: somente o gerente
@@ -220,6 +221,59 @@ module.exports = (app) => {
   // ---- Caixa de saída de e-mails (envio simulado) ----
   app.get('/api/gestao/emails', exigirGerente, () => todos('SELECT * FROM emails ORDER BY id DESC LIMIT 50'));
 
+  // ---- Estoque de ingredientes e fichas técnicas ----
+  // Aceita "1,5" ou "1.5" (quantidades em kg, litros, unidades...)
+  const decimal = (valor, campo, { min = 0, max = 100000 } = {}) => {
+    const n = Number(String(valor ?? '').trim().replace(',', '.'));
+    if (String(valor ?? '').trim() === '' || !Number.isFinite(n) || n < min || n > max) throw new HttpError(422, `Valor inválido para "${campo}"`);
+    return n;
+  };
+
+  app.get('/api/gestao/estoque', exigirGerente, () => estoque.painel());
+
+  app.post('/api/gestao/ingredientes', exigirGerente, (ctx) => {
+    const b = ctx.body;
+    const i = estoque.criarIngrediente({
+      nome: texto(b.nome, 'nome', { min: 2, max: 60 }),
+      unidade: opcao(b.unidade, 'unidade', estoque.UNIDADES),
+      quantidade: decimal(b.quantidade, 'quantidade'),
+      minimo: decimal(b.minimo ?? 0, 'estoque mínimo'),
+    }, ctx.usuario.id);
+    auditoria.registrar(ctx, 'ingrediente_criado', { entidade: 'ingrediente', id: i.id, detalhes: { nome: i.nome, quantidade: i.quantidade } });
+    ctx.status = 201;
+    return i;
+  });
+
+  // Correção depois de contar o estoque, e mudança do estoque mínimo
+  app.put('/api/gestao/ingredientes/:id', exigirGerente, (ctx) => {
+    const quantidade = decimal(ctx.body.quantidade, 'quantidade');
+    const minimo = decimal(ctx.body.minimo ?? 0, 'estoque mínimo');
+    const i = estoque.corrigir(Number(ctx.params.id), { quantidade, minimo }, ctx.usuario.id);
+    auditoria.registrar(ctx, 'estoque_ajustado', { entidade: 'ingrediente', id: i.id, detalhes: { quantidade, minimo } });
+    return i;
+  });
+
+  // Entrada de mercadoria (compra / reposição)
+  app.post('/api/gestao/ingredientes/:id/entrada', exigirGerente, (ctx) => {
+    const quantidade = decimal(ctx.body.quantidade, 'quantidade', { min: 0.001 });
+    const i = estoque.entrada(Number(ctx.params.id), quantidade, ctx.usuario.id,
+      texto(ctx.body.observacao, 'observação', { obrigatorio: false, max: 120 }));
+    auditoria.registrar(ctx, 'estoque_entrada', { entidade: 'ingrediente', id: i.id, detalhes: { quantidade, saldo: i.quantidade } });
+    return i;
+  });
+
+  // Ficha técnica do prato: ingredientes de UMA porção (lista vazia = sem controle de estoque)
+  app.put('/api/gestao/fichas/:itemId', exigirGerente, (ctx) => {
+    const linhas = Array.isArray(ctx.body.ingredientes) ? ctx.body.ingredientes : [];
+    if (linhas.length > 30) throw new HttpError(422, 'Ficha técnica com ingredientes demais');
+    const ficha = estoque.salvarFicha(Number(ctx.params.itemId), linhas.map((l) => ({
+      ingrediente_id: inteiro(l.ingrediente_id, 'ingrediente', { min: 1 }),
+      quantidade: decimal(l.quantidade, 'quantidade por porção', { min: 0.001 }),
+    })));
+    auditoria.registrar(ctx, 'ficha_tecnica_salva', { entidade: 'item', id: ctx.params.itemId, detalhes: { ingredientes: ficha.length } });
+    return { ficha, porcoes: estoque.porcoesDe(ficha) };
+  });
+  
   // ---- Backup (RNF Confiabilidade) ----
   app.get('/api/gestao/backups', exigirGerente, () => backup.listar());
   app.post('/api/gestao/backups', exigirGerente, (ctx) => {
