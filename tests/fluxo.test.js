@@ -356,4 +356,70 @@ describe('Inovações — fidelidade e sugestão de entregador', () => {
   });
 });
 
+
+describe('Melhorias da 2ª apresentação — rastreio do cliente', () => {
+  test('cliente acompanha a entrega no mapa: só quando sai do restaurante e sem dados internos do SLA', async () => {
+    const p = await novoPedido();
+    assert.equal((await u.cliente.get(`/api/pedidos/${p.codigo}/rastreio`)).dados.ativo, false, 'ainda na cozinha');
+    for (const [quem, st] of [[u.atendente, 'recebido'], [u.cozinha, 'em_preparo'], [u.cozinha, 'pronto']]) await mudar(quem, p.codigo, st);
+    await u.logistica.post(`/api/logistica/pedidos/${p.codigo}/despachar`, { entregador_id: 2 });
+    await u.logistica.post(`/api/logistica/pedidos/${p.codigo}/a-caminho`);
+    const r = (await u.cliente.get(`/api/pedidos/${p.codigo}/rastreio`)).dados;
+    assert.equal(r.ativo, true);
+    assert.equal(r.status, 'a_caminho');
+    assert.ok(r.restaurante.lat && r.destino.lat && r.posicao.lat && r.chegada_prevista);
+    assert.ok(r.entregador.nome);
+    assert.equal(r.prazo_sla, undefined, 'prazo do SLA é interno');
+    assert.equal((await usuario(srv.base).get(`/api/pedidos/${p.codigo}/rastreio`)).status, 401, 'exige login');
+  });
+});
+
+describe('Melhorias da 2ª apresentação — estoque de ingredientes', () => {
+  const FEIJOADA = 5;
+  const PUDIM = 15;
+  const painel = async () => (await u.gerente.get('/api/gestao/estoque')).dados;
+  const ing = async (nome) => (await painel()).ingredientes.find((i) => i.nome === nome);
+  const retirada = (itens) => ({ itens, modalidade: 'retirada', forma_pagamento: 'pix' });
+
+  test('pedido dá baixa nos ingredientes pela ficha técnica e o cancelamento devolve', async () => {
+    const antes = (await ing('Carnes da feijoada')).quantidade; // 0,2 kg por porção
+    const p = await novoPedido(retirada([{ item_id: FEIJOADA, quantidade: 2 }]));
+    assert.equal((await ing('Carnes da feijoada')).quantidade, Math.round((antes - 0.4) * 1000) / 1000, 'baixa de 2 × 0,2 kg');
+    await u.cliente.post(`/api/pedidos/${p.codigo}/cancelar`);
+    assert.equal((await ing('Carnes da feijoada')).quantidade, antes, 'cancelado: volta ao estoque');
+  });
+
+  test('prato fica esgotado quando falta um ingrediente da ficha (leite condensado zerado)', async () => {
+    const cardapio = (await usuario(srv.base).get('/api/cardapio')).dados;
+    const pudim = cardapio.categorias.flatMap((c) => c.itens).find((i) => i.id === PUDIM);
+    assert.equal(pudim.esgotado, true);
+    const r = await u.cliente.post('/api/pedidos', retirada([{ item_id: PUDIM, quantidade: 1 }]));
+    assert.equal(r.status, 422);
+    assert.match(r.dados.erro, /leite condensado/);
+    const salmao = (await painel()).pratos.find((p) => p.nome === 'Salmão com legumes');
+    assert.equal(salmao.porcoes, 4, '1,2 kg ÷ 0,25 kg por porção');
+    const demais = await u.cliente.post('/api/pedidos/simular', retirada([{ item_id: 9, quantidade: 5 }]));
+    assert.equal(demais.status, 422, 'não vende mais porções do que os ingredientes permitem');
+  });
+
+  test('gerente cadastra ingrediente, monta a ficha técnica, dá entrada e o sistema avisa no mínimo', async () => {
+    const novo = await u.gerente.post('/api/gestao/ingredientes', { nome: 'Calda de caramelo', unidade: 'L', quantidade: '1,5', minimo: 0.5 });
+    assert.equal(novo.status, 201);
+    assert.equal(novo.dados.quantidade, 1.5, 'aceita vírgula');
+    assert.equal((await u.gerente.post('/api/gestao/ingredientes', { nome: 'calda de caramelo', unidade: 'L', quantidade: 1 })).status, 409);
+    const lc = await ing('Leite condensado');
+    assert.equal((await u.cozinha.post(`/api/gestao/ingredientes/${lc.id}/entrada`, { quantidade: 1 })).status, 403, 'só o gerente');
+    assert.equal((await u.gerente.post(`/api/gestao/ingredientes/${lc.id}/entrada`, { quantidade: 0 })).status, 422);
+    await u.gerente.post(`/api/gestao/ingredientes/${lc.id}/entrada`, { quantidade: 2 });
+    const ficha = await u.gerente.put(`/api/gestao/fichas/${PUDIM}`, { ingredientes: [
+      { ingrediente_id: lc.id, quantidade: 0.25 }, { ingrediente_id: novo.dados.id, quantidade: 0.05 }] });
+    assert.equal(ficha.dados.porcoes, 8, '2 latas ÷ 0,25');
+    await u.gerente.put(`/api/gestao/ingredientes/${lc.id}`, { quantidade: 2, minimo: 1.75 });
+    await novoPedido(retirada([{ item_id: PUDIM, quantidade: 1 }])); // fica com 1,75 = mínimo
+    const { lista } = (await u.cozinha.get('/api/notificacoes')).dados;
+    assert.ok(lista.some((n) => /Estoque baixo.*Leite condensado/.test(n.mensagem)), 'cozinha é avisada');
+    assert.equal((await u.gerente.put(`/api/gestao/fichas/${PUDIM}`, { ingredientes: [] })).dados.porcoes, null, 'sem ficha = sem controle');
+  });
+});
+
 });
